@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 from enum import Enum, auto
 import hashlib
+from ipaddress import IPv4Address, IPv4Network, ip_network
 
 class TransferStatus(Enum):
     PENDING = auto()
@@ -131,6 +132,8 @@ class StorageVirtualNode:
         except StopIteration:
             return False
         
+        print(f"[{self.node_id}] Preparing chunk {chunk.chunk_id} of file {file_id} from {source_node}")
+        
         # Simulate network transfer time
         chunk_size_bits = chunk.size * 8  # Convert bytes to bits
         available_bandwidth = min(
@@ -139,19 +142,34 @@ class StorageVirtualNode:
         )
         
         if available_bandwidth <= 0:
+            print(f"[{self.node_id}] No available bandwidth for chunk ❌ {chunk.chunk_id}")
             return False
         
         # Calculate transfer time (in seconds)
         transfer_time = chunk_size_bits / available_bandwidth
+
+        print(f"[{self.node_id}] START transfer of chunk {chunk.chunk_id} ({chunk.size} bytes)")
+        print(f"   Using bandwidth: {available_bandwidth} bps")
+        print(f"   Estimated time: {transfer_time:.4f}s")
+
         time.sleep(transfer_time)  # Simulate transfer delay
         
         # Update chunk status
         chunk.status = TransferStatus.COMPLETED
         chunk.stored_node = self.node_id
+
+        print(f"[{self.node_id}]  COMPLETED chunk ✔ {chunk.chunk_id}")
         
         # Update metrics
-        self.network_utilization += available_bandwidth * 0.8  # Simulate some fluctuation
-        self.total_data_transferred += chunk.size
+        temporary_bandwidth_usage = available_bandwidth * 0.2
+        self.network_utilization += temporary_bandwidth_usage
+
+        self.network_utilization -= temporary_bandwidth_usage
+        self.network_utilization = max(0, min(self.network_utilization, self.bandwidth))
+
+        completed_chunks = sum(1 for c in transfer.chunks if c.status == TransferStatus.COMPLETED)
+        total_chunks = len(transfer.chunks)
+        print(f"[{self.node_id}] Progress: {completed_chunks}/{total_chunks} chunks completed")
         
         # Check if all chunks are completed
         if all(c.status == TransferStatus.COMPLETED for c in transfer.chunks):
@@ -161,6 +179,9 @@ class StorageVirtualNode:
             self.stored_files[file_id] = transfer
             del self.active_transfers[file_id]
             self.total_requests_processed += 1
+
+            print(f"[{self.node_id}] FILE TRANSFER COMPLETED for file 🎉 {file_id}")
+            print(f"[{self.node_id}] Stored total: {self.total_data_transferred / (1024*1024):.2f} MB")
         
         return True
 
