@@ -5,8 +5,8 @@ from storage_virtual_node import StorageVirtualNode
 network = StorageVirtualNetwork()
 
 # Create nodes
-node1 = StorageVirtualNode("node1", cpu_capacity=4, memory_capacity=16, storage_capacity=500, bandwidth=1000)
-node2 = StorageVirtualNode("node2", cpu_capacity=8, memory_capacity=32, storage_capacity=1000, bandwidth=2000)
+node1 = StorageVirtualNode("node1", ip_address="10.0.0.1", cpu_capacity=4, memory_capacity=16, storage_capacity=500, bandwidth=1000)
+node2 = StorageVirtualNode("node2", ip_address="10.0.0.2", cpu_capacity=8, memory_capacity=32, storage_capacity=1000, bandwidth=2000)
 
 # Add nodes to network
 network.add_node(node1)

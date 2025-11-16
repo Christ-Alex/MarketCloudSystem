@@ -34,6 +34,7 @@ class StorageVirtualNode:
     def __init__(
         self,
         node_id: str,
+        ip_address: str,
         cpu_capacity: int,  # in vCPUs
         memory_capacity: int,  # in GB
         storage_capacity: int,  # in GB
@@ -41,6 +42,7 @@ class StorageVirtualNode:
     ):
         self.node_id = node_id
         self.cpu_capacity = cpu_capacity
+        self.ip = IPv4Address(ip_address)
         self.memory_capacity = memory_capacity
         self.total_storage = storage_capacity * 1024 * 1024 * 1024  # Convert GB to bytes
         self.bandwidth = bandwidth * 1000000  # Convert Mbps to bits per second
@@ -62,6 +64,9 @@ class StorageVirtualNode:
     def add_connection(self, node_id: str, bandwidth: int):
         """Add a network connection to another node"""
         self.connections[node_id] = bandwidth * 1000000  # Store in bits per second
+
+        # NEW: Log the connection including the IP
+        print(f"Connected {self.node_id} ({self.ip}) <--> {node_id}")
 
     def _calculate_chunk_size(self, file_size: int) -> int:
         """Determine optimal chunk size based on file size"""
@@ -132,7 +137,8 @@ class StorageVirtualNode:
         except StopIteration:
             return False
         
-        print(f"[{self.node_id}] Preparing chunk {chunk.chunk_id} of file {file_id} from {source_node}")
+        print(f"[{self.node_id} | {self.ip}] Preparing chunk {chunk.chunk_id} of file {file_id} from {source_node}")
+
         
         # Simulate network transfer time
         chunk_size_bits = chunk.size * 8  # Convert bytes to bits
@@ -148,7 +154,7 @@ class StorageVirtualNode:
         # Calculate transfer time (in seconds)
         transfer_time = chunk_size_bits / available_bandwidth
 
-        print(f"[{self.node_id}] START transfer of chunk {chunk.chunk_id} ({chunk.size} bytes)")
+        print(f"[{self.node_id} | {self.ip}] START transfer of chunk {chunk.chunk_id}")
         print(f"   Using bandwidth: {available_bandwidth} bps")
         print(f"   Estimated time: {transfer_time:.4f}s")
 
@@ -158,7 +164,7 @@ class StorageVirtualNode:
         chunk.status = TransferStatus.COMPLETED
         chunk.stored_node = self.node_id
 
-        print(f"[{self.node_id}]  COMPLETED chunk ✔ {chunk.chunk_id}")
+        print(f"[{self.node_id} | {self.ip}]  COMPLETED chunk ✔ {chunk.chunk_id}")
         
         # Update metrics
         temporary_bandwidth_usage = available_bandwidth * 0.2
@@ -169,7 +175,7 @@ class StorageVirtualNode:
 
         completed_chunks = sum(1 for c in transfer.chunks if c.status == TransferStatus.COMPLETED)
         total_chunks = len(transfer.chunks)
-        print(f"[{self.node_id}] Progress: {completed_chunks}/{total_chunks} chunks completed")
+        print(f"[{self.node_id} | {self.ip}] Progress: {completed_chunks}/{total_chunks} chunks completed")
         
         # Check if all chunks are completed
         if all(c.status == TransferStatus.COMPLETED for c in transfer.chunks):
@@ -180,8 +186,9 @@ class StorageVirtualNode:
             del self.active_transfers[file_id]
             self.total_requests_processed += 1
 
-            print(f"[{self.node_id}] FILE TRANSFER COMPLETED for file 🎉 {file_id}")
-            print(f"[{self.node_id}] Stored total: {self.total_data_transferred / (1024*1024):.2f} MB")
+            stored_mb = transfer.total_size / (1024 * 1024)
+            print(f"[{self.node_id} | {self.ip}] Stored total: {stored_mb:.2f} MB")
+            print(f"[{self.node_id} | {self.ip}] 🎉 FILE TRANSFER COMPLETED for file {file_id}")
         
         return True
 
