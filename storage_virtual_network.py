@@ -1,88 +1,113 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
+from collections import defaultdict
 import hashlib
 import time
+import networkx as nx
 from storage_virtual_node import StorageVirtualNode, FileTransfer, TransferStatus
-from collections import defaultdict
 
 class StorageVirtualNetwork:
     def __init__(self):
         self.nodes: Dict[str, StorageVirtualNode] = {}
         self.transfer_operations: Dict[str, Dict[str, FileTransfer]] = defaultdict(dict)
-        
+
     def add_node(self, node: StorageVirtualNode):
-        """Add a node to the network"""
         self.nodes[node.node_id] = node
-        
+
     def connect_nodes(self, node1_id: str, node2_id: str, bandwidth: int):
-        """Connect two nodes with specified bandwidth"""
         if node1_id in self.nodes and node2_id in self.nodes:
             self.nodes[node1_id].add_connection(node2_id, bandwidth)
             self.nodes[node2_id].add_connection(node1_id, bandwidth)
             return True
         return False
-    
-    def initiate_file_transfer(
-        self,
-        source_node_id: str,
-        target_node_id: str,
-        file_name: str,
-        file_size: int
-    ) -> Optional[FileTransfer]:
-        """Initiate a file transfer between nodes"""
+
+    def _build_graph(self) -> nx.Graph:
+        G = nx.Graph()
+        for nid, node in self.nodes.items():
+            G.add_node(nid)
+            for nbr in node.connections.keys():
+                G.add_edge(nid, nbr)
+        return G
+
+    def find_route(self, source_id: str, target_id: str) -> Optional[list]:
+        if source_id not in self.nodes or target_id not in self.nodes:
+            return None
+        G = self._build_graph()
+        try:
+            path = nx.shortest_path(G, source_id, target_id)
+            print(f"📡 Route computed: {' → '.join(path)}")
+            return path
+        except nx.NetworkXNoPath:
+            print(f"❌ No route between {source_id} and {target_id}")
+            return None
+
+    def initiate_file_transfer(self, source_node_id: str, target_node_id: str, file_name: str, file_size: int) -> Optional[FileTransfer]:
         if source_node_id not in self.nodes or target_node_id not in self.nodes:
             return None
-            
-        # Generate unique file ID
+
+        path = self.find_route(source_node_id, target_node_id)
+        if path is None:
+            return None
+
         file_id = hashlib.md5(f"{file_name}-{time.time()}".encode()).hexdigest()
-        
-        # Request storage on target node
-        target_node = self.nodes[target_node_id]
-        transfer = target_node.initiate_file_transfer(file_id, file_name, file_size, source_node_id)
-        
-        if transfer:
-            self.transfer_operations[source_node_id][file_id] = transfer
-            return transfer
-        return None
-    
-    def process_file_transfer(
-        self,
-        source_node_id: str,
-        target_node_id: str,
-        file_id: str,
-        chunks_per_step: int = 1
-    ) -> Tuple[int, bool]:
-        """Process a file transfer in chunks"""
-        if (source_node_id not in self.nodes or 
-            target_node_id not in self.nodes or
-            file_id not in self.transfer_operations[source_node_id]):
+        created_transfers = {}
+
+        for node_id in path:
+            node = self.nodes[node_id]
+            tr = node.initiate_file_transfer(file_id, file_name, file_size, source_node=source_node_id)
+            if tr is None:
+                for nid in created_transfers:
+                    if file_id in self.nodes[nid].active_transfers:
+                        del self.nodes[nid].active_transfers[file_id]
+                print(f"❌ Not enough storage on {node_id} to initiate transfer")
+                return None
+            created_transfers[node_id] = tr
+
+        self.transfer_operations[source_node_id][file_id] = created_transfers[target_node_id]
+        return created_transfers[target_node_id]
+
+    def process_file_transfer(self, source_node_id: str, target_node_id: str, file_id: str, chunks_per_step: int = 1) -> Tuple[int, bool]:
+        if source_node_id not in self.transfer_operations:
             return (0, False)
-            
-        source_node = self.nodes[source_node_id]
-        target_node = self.nodes[target_node_id]
+        if file_id not in self.transfer_operations[source_node_id]:
+            return (0, False)
+
         transfer = self.transfer_operations[source_node_id][file_id]
-        
-        chunks_transferred = 0
+        path = self.find_route(source_node_id, target_node_id)
+        if path is None:
+            return (0, False)
+
+        chunks_done = 0
         for chunk in transfer.chunks:
-            if chunk.status != TransferStatus.COMPLETED and chunks_transferred < chunks_per_step:
-                if target_node.process_chunk_transfer(file_id, chunk.chunk_id, source_node_id):
-                    chunks_transferred += 1
-                else:
-                    return (chunks_transferred, False)
-        
-        # Check if transfer is complete
+            if chunk.status == TransferStatus.COMPLETED:
+                continue
+            if chunks_done >= chunks_per_step:
+                break
+
+            hop_ok = True
+            for i in range(len(path) - 1):
+                hop_from = path[i]
+                hop_to = path[i + 1]
+                next_node = self.nodes[hop_to]
+                ok = next_node.process_chunk_transfer(file_id, chunk.chunk_id, hop_from)
+                if not ok:
+                    hop_ok = False
+                    break
+
+            if hop_ok:
+                chunks_done += 1
+
         if transfer.status == TransferStatus.COMPLETED:
             del self.transfer_operations[source_node_id][file_id]
-            return (chunks_transferred, True)
-            
-        return (chunks_transferred, False)
-    
+            return (chunks_done, True)
+
+        return (chunks_done, False)
+
     def get_network_stats(self) -> Dict[str, float]:
-        """Get overall network statistics"""
-        total_bandwidth = sum(n.bandwidth for n in self.nodes.values())
+        total_bandwidth = sum(n.bandwidth for n in self.nodes.values()) or 1
         used_bandwidth = sum(n.network_utilization for n in self.nodes.values())
-        total_storage = sum(n.total_storage for n in self.nodes.values())
+        total_storage = sum(n.total_storage for n in self.nodes.values()) or 1
         used_storage = sum(n.used_storage for n in self.nodes.values())
-        
+
         return {
             "total_nodes": len(self.nodes),
             "total_bandwidth_bps": total_bandwidth,

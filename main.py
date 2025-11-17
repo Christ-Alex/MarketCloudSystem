@@ -1,5 +1,7 @@
 from storage_virtual_network import StorageVirtualNetwork
 from storage_virtual_node import StorageVirtualNode
+from animation import NetworkAnimator
+
 
 # Create network
 network = StorageVirtualNetwork()
@@ -7,18 +9,26 @@ network = StorageVirtualNetwork()
 # Create nodes
 node1 = StorageVirtualNode("node1", ip_address="10.0.0.1", cpu_capacity=4, memory_capacity=16, storage_capacity=500, bandwidth=1000)
 node2 = StorageVirtualNode("node2", ip_address="10.0.0.2", cpu_capacity=8, memory_capacity=32, storage_capacity=1000, bandwidth=2000)
+node3 = StorageVirtualNode("node3", ip_address="10.0.0.3", cpu_capacity=4, memory_capacity=16, storage_capacity=500, bandwidth=1000)
+node4 = StorageVirtualNode("node4", ip_address="10.0.0.4", cpu_capacity=8, memory_capacity=32, storage_capacity=1000, bandwidth=2000)
 
 # Add nodes to network
 network.add_node(node1)
 network.add_node(node2)
+network.add_node(node3)
+network.add_node(node4)
+
 
 # Connect nodes with 1Gbps link
 network.connect_nodes("node1", "node2", bandwidth=1000)
+network.connect_nodes("node1", "node3", bandwidth=2000)
+network.connect_nodes("node2", "node4", bandwidth=1000)
+network.connect_nodes("node3", "node4", bandwidth=2000)
 
 # Initiate file transfer (100MB file from node1 to node2)
 transfer = network.initiate_file_transfer(
     source_node_id="node1",
-    target_node_id="node2",
+    target_node_id="node4",
     file_name="large_dataset.zip",
     file_size=100 * 1024 * 1024  # 100MB
 )
@@ -30,7 +40,7 @@ if transfer:
     while True:
         chunks_done, completed = network.process_file_transfer(
             source_node_id="node1",
-            target_node_id="node2",
+            target_node_id="node4",
             file_id=transfer.file_id,
             chunks_per_step=3  # Process 3 chunks at a time
         )
