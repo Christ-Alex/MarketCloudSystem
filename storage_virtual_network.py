@@ -65,7 +65,7 @@ class StorageVirtualNetwork:
         self.transfer_operations[source_node_id][file_id] = created_transfers[target_node_id]
         return created_transfers[target_node_id]
 
-    def process_file_transfer(self, source_node_id: str, target_node_id: str, file_id: str, chunks_per_step: int = 1) -> Tuple[int, bool]:
+    def process_file_transfer(self, source_node_id: str, target_node_id: str,file_id: str, chunks_per_step: int = 1) -> Tuple[int, bool]:
         if source_node_id not in self.transfer_operations:
             return (0, False)
         if file_id not in self.transfer_operations[source_node_id]:
@@ -88,7 +88,12 @@ class StorageVirtualNetwork:
                 hop_from = path[i]
                 hop_to = path[i + 1]
                 next_node = self.nodes[hop_to]
-                ok = next_node.process_chunk_transfer(file_id, chunk.chunk_id, hop_from)
+
+                # ✅ Mark only the destination hop as final
+                is_final = (hop_to == target_node_id)
+                ok = next_node.process_chunk_transfer(
+                    file_id, chunk.chunk_id, hop_from, is_final_hop=is_final
+                )
                 if not ok:
                     hop_ok = False
                     break
@@ -96,7 +101,9 @@ class StorageVirtualNetwork:
             if hop_ok:
                 chunks_done += 1
 
-        if transfer.status == TransferStatus.COMPLETED:
+        # ✅ Check if the destination node has finalized the file
+        dest_node = self.nodes[target_node_id]
+        if file_id in dest_node.stored_files:
             del self.transfer_operations[source_node_id][file_id]
             return (chunks_done, True)
 
