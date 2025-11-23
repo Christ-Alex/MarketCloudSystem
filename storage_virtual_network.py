@@ -65,7 +65,7 @@ class StorageVirtualNetwork:
         self.transfer_operations[source_node_id][file_id] = created_transfers[target_node_id]
         return created_transfers[target_node_id]
 
-    def process_file_transfer(self, source_node_id: str, target_node_id: str,file_id: str, chunks_per_step: int = 1) -> Tuple[int, bool]:
+    def process_file_transfer(self, source_node_id: str, target_node_id: str, file_id: str, chunks_per_step: int = 1) -> Tuple[int, bool]:
         if source_node_id not in self.transfer_operations:
             return (0, False)
         if file_id not in self.transfer_operations[source_node_id]:
@@ -112,8 +112,10 @@ class StorageVirtualNetwork:
     def get_network_stats(self) -> Dict[str, float]:
         total_bandwidth = sum(n.bandwidth for n in self.nodes.values()) or 1
         used_bandwidth = sum(n.network_utilization for n in self.nodes.values())
-        total_storage = sum(n.total_storage for n in self.nodes.values()) or 1
-        used_storage = sum(n.used_storage for n in self.nodes.values())
+
+        # Updated to use disk-backed storage
+        total_storage = sum(n.disk.disk_size_bytes for n in self.nodes.values()) or 1
+        used_storage = sum(n.disk.get_used_space() for n in self.nodes.values())
 
         return {
             "total_nodes": len(self.nodes),
