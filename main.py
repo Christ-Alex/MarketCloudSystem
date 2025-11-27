@@ -10,11 +10,11 @@ network = StorageVirtualNetwork()
 node1 = StorageVirtualNode("node1", cpu_capacity=4, memory_capacity=16,
                            storage_capacity_mb=500 * 1024, bandwidth=1000)   # 500 GB → MB
 node2 = StorageVirtualNode("node2", cpu_capacity=8, memory_capacity=32,
-                           storage_capacity_mb=1000 * 1024, bandwidth=2000) # 1 TB → MB
+                           storage_capacity_mb=500 * 1024, bandwidth=2000) # 1 TB → MB
 node3 = StorageVirtualNode("node3", cpu_capacity=4, memory_capacity=16,
                            storage_capacity_mb=500 * 1024, bandwidth=1000)   # 500 GB → MB
 node4 = StorageVirtualNode("node4", cpu_capacity=8, memory_capacity=32,
-                           storage_capacity_mb=1000 * 1024, bandwidth=2000) # 1 TB → MB
+                           storage_capacity_mb=500 * 1024, bandwidth=2000) # 1 TB → MB
 
 # Add nodes to network
 network.add_node(node1)
@@ -39,7 +39,7 @@ transfer = network.initiate_file_transfer(
     source_node_id="node1",
     target_node_id="node4",
     file_name="large_dataset.zip",
-    file_size=100 * 1024 * 1024  # 100 MB
+    file_size=50 * 1024 * 1024  # 50 MB
 )
 
 if transfer:
