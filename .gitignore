@@ -1,0 +1,10 @@
+# Ignore Firebase credentials
+serviceAccountKey.json
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore environment files
+.env
