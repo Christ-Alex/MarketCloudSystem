@@ -3,6 +3,7 @@
 import grpc
 import warnings
 
+import auth_pb2 as auth__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
@@ -22,3 +23,255 @@ if _version_not_supported:
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
+
+
+class AuthServiceStub(object):
+    """The AuthService defines all RPCs for user management and file storage
+    """
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.Register = channel.unary_unary(
+                '/cloud.AuthService/Register',
+                request_serializer=auth__pb2.RegisterRequest.SerializeToString,
+                response_deserializer=auth__pb2.RegisterResponse.FromString,
+                _registered_method=True)
+        self.Login = channel.unary_unary(
+                '/cloud.AuthService/Login',
+                request_serializer=auth__pb2.LoginRequest.SerializeToString,
+                response_deserializer=auth__pb2.LoginResponse.FromString,
+                _registered_method=True)
+        self.VerifyOTP = channel.unary_unary(
+                '/cloud.AuthService/VerifyOTP',
+                request_serializer=auth__pb2.OTPRequest.SerializeToString,
+                response_deserializer=auth__pb2.OTPResponse.FromString,
+                _registered_method=True)
+        self.UploadFile = channel.unary_unary(
+                '/cloud.AuthService/UploadFile',
+                request_serializer=auth__pb2.FileUploadRequest.SerializeToString,
+                response_deserializer=auth__pb2.FileUploadResponse.FromString,
+                _registered_method=True)
+        self.ListFiles = channel.unary_unary(
+                '/cloud.AuthService/ListFiles',
+                request_serializer=auth__pb2.ListFilesRequest.SerializeToString,
+                response_deserializer=auth__pb2.ListFilesResponse.FromString,
+                _registered_method=True)
+
+
+class AuthServiceServicer(object):
+    """The AuthService defines all RPCs for user management and file storage
+    """
+
+    def Register(self, request, context):
+        """Register a new user (assigns quota)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Login(self, request, context):
+        """Login with email + password (triggers OTP send)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VerifyOTP(self, request, context):
+        """Verify OTP to confirm authentication
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UploadFile(self, request, context):
+        """Upload a file (only if authenticated and within quota)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListFiles(self, request, context):
+        """List all files stored by a user
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_AuthServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'Register': grpc.unary_unary_rpc_method_handler(
+                    servicer.Register,
+                    request_deserializer=auth__pb2.RegisterRequest.FromString,
+                    response_serializer=auth__pb2.RegisterResponse.SerializeToString,
+            ),
+            'Login': grpc.unary_unary_rpc_method_handler(
+                    servicer.Login,
+                    request_deserializer=auth__pb2.LoginRequest.FromString,
+                    response_serializer=auth__pb2.LoginResponse.SerializeToString,
+            ),
+            'VerifyOTP': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyOTP,
+                    request_deserializer=auth__pb2.OTPRequest.FromString,
+                    response_serializer=auth__pb2.OTPResponse.SerializeToString,
+            ),
+            'UploadFile': grpc.unary_unary_rpc_method_handler(
+                    servicer.UploadFile,
+                    request_deserializer=auth__pb2.FileUploadRequest.FromString,
+                    response_serializer=auth__pb2.FileUploadResponse.SerializeToString,
+            ),
+            'ListFiles': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListFiles,
+                    request_deserializer=auth__pb2.ListFilesRequest.FromString,
+                    response_serializer=auth__pb2.ListFilesResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'cloud.AuthService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('cloud.AuthService', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class AuthService(object):
+    """The AuthService defines all RPCs for user management and file storage
+    """
+
+    @staticmethod
+    def Register(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.AuthService/Register',
+            auth__pb2.RegisterRequest.SerializeToString,
+            auth__pb2.RegisterResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Login(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.AuthService/Login',
+            auth__pb2.LoginRequest.SerializeToString,
+            auth__pb2.LoginResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def VerifyOTP(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.AuthService/VerifyOTP',
+            auth__pb2.OTPRequest.SerializeToString,
+            auth__pb2.OTPResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UploadFile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.AuthService/UploadFile',
+            auth__pb2.FileUploadRequest.SerializeToString,
+            auth__pb2.FileUploadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListFiles(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.AuthService/ListFiles',
+            auth__pb2.ListFilesRequest.SerializeToString,
+            auth__pb2.ListFilesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)

@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package cloud;
+
+// The AuthService defines all RPCs for user management and file storage
+service AuthService {
+  // Register a new user (assigns quota)
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+
+  // Login with email + password (triggers OTP send)
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  // Verify OTP to confirm authentication
+  rpc VerifyOTP(OTPRequest) returns (OTPResponse);
+
+  // Upload a file (only if authenticated and within quota)
+  rpc UploadFile(FileUploadRequest) returns (FileUploadResponse);
+
+  // List all files stored by a user
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+}
+
+// --- Messages ---
+
+message RegisterRequest {
+  string email = 1;
+  string username = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  bool success = 1;
+  string message = 2;
+  int64 quota_bytes = 3;   // e.g. 5GB
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message OTPRequest {
+  string email = 1;
+  string otp_code = 2;
+}
+
+message OTPResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message FileUploadRequest {
+  string email = 1;
+  string filename = 2;
+  int64 filesize = 3;
+}
+
+message FileUploadResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListFilesRequest {
+  string email = 1;
+}
+
+message ListFilesResponse {
+  repeated string filenames = 1;
+}

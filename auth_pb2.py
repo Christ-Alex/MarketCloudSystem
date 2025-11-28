@@ -24,11 +24,33 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nauth.proto')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nauth.proto\x12\x05\x63loud\"D\n\x0fRegisterRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12\x10\n\x08password\x18\x03 \x01(\t\"I\n\x10RegisterResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x13\n\x0bquota_bytes\x18\x03 \x01(\x03\"/\n\x0cLoginRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"1\n\rLoginResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"-\n\nOTPRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08otp_code\x18\x02 \x01(\t\"/\n\x0bOTPResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"F\n\x11\x46ileUploadRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x10\n\x08\x66ilesize\x18\x03 \x01(\x03\"6\n\x12\x46ileUploadResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"!\n\x10ListFilesRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\"&\n\x11ListFilesResponse\x12\x11\n\tfilenames\x18\x01 \x03(\t2\xb5\x02\n\x0b\x41uthService\x12;\n\x08Register\x12\x16.cloud.RegisterRequest\x1a\x17.cloud.RegisterResponse\x12\x32\n\x05Login\x12\x13.cloud.LoginRequest\x1a\x14.cloud.LoginResponse\x12\x32\n\tVerifyOTP\x12\x11.cloud.OTPRequest\x1a\x12.cloud.OTPResponse\x12\x41\n\nUploadFile\x12\x18.cloud.FileUploadRequest\x1a\x19.cloud.FileUploadResponse\x12>\n\tListFiles\x12\x17.cloud.ListFilesRequest\x1a\x18.cloud.ListFilesResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'auth_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
+  _globals['_REGISTERREQUEST']._serialized_start=21
+  _globals['_REGISTERREQUEST']._serialized_end=89
+  _globals['_REGISTERRESPONSE']._serialized_start=91
+  _globals['_REGISTERRESPONSE']._serialized_end=164
+  _globals['_LOGINREQUEST']._serialized_start=166
+  _globals['_LOGINREQUEST']._serialized_end=213
+  _globals['_LOGINRESPONSE']._serialized_start=215
+  _globals['_LOGINRESPONSE']._serialized_end=264
+  _globals['_OTPREQUEST']._serialized_start=266
+  _globals['_OTPREQUEST']._serialized_end=311
+  _globals['_OTPRESPONSE']._serialized_start=313
+  _globals['_OTPRESPONSE']._serialized_end=360
+  _globals['_FILEUPLOADREQUEST']._serialized_start=362
+  _globals['_FILEUPLOADREQUEST']._serialized_end=432
+  _globals['_FILEUPLOADRESPONSE']._serialized_start=434
+  _globals['_FILEUPLOADRESPONSE']._serialized_end=488
+  _globals['_LISTFILESREQUEST']._serialized_start=490
+  _globals['_LISTFILESREQUEST']._serialized_end=523
+  _globals['_LISTFILESRESPONSE']._serialized_start=525
+  _globals['_LISTFILESRESPONSE']._serialized_end=563
+  _globals['_AUTHSERVICE']._serialized_start=566
+  _globals['_AUTHSERVICE']._serialized_end=875
 # @@protoc_insertion_point(module_scope)
