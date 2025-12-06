@@ -1,0 +1,174 @@
+# controller.py
+import multiprocessing as mp
+import time
+import hashlib
+from typing import Dict, Tuple, Optional
+from node_process import node_loop
+
+def make_node_process(node_id: str, cpu: int, mem: int, storage_mb: int, bw_mbps: int):
+    cmd_q = mp.Queue()
+    resp_q = mp.Queue()
+    proc = mp.Process(
+        target=node_loop,
+        args=(node_id, cpu, mem, storage_mb, bw_mbps, cmd_q, resp_q),
+        daemon=True
+    )
+    return proc, cmd_q, resp_q
+
+def send(cmd_q: mp.Queue, resp_q: mp.Queue, cmd: dict, wait=True, timeout=5.0) -> Optional[dict]:
+    cmd_q.put(cmd)
+    if not wait:
+        return None
+    try:
+        return resp_q.get(timeout=timeout)
+    except Exception:
+        return {"ok": False, "error": "timeout"}
+
+def route_process_step(nodes, file_id: str, chunk_id: int, src: str, mid: str, dst: str) -> bool:
+    # Mid hop processes from src -> mid
+    res_mid = send(nodes[mid][1], nodes[mid][2], {
+        "op": "process_chunk",
+        "file_id": file_id,
+        "chunk_id": chunk_id,
+        "source_node": src,
+        "is_final_hop": False
+    })
+    if not res_mid.get("ok"):
+        print(f"[controller] mid-hop {mid} refused chunk {chunk_id}")
+        return False
+
+    # Final hop processes from mid -> dst
+    res_dst = send(nodes[dst][1], nodes[dst][2], {
+        "op": "process_chunk",
+        "file_id": file_id,
+        "chunk_id": chunk_id,
+        "source_node": mid,
+        "is_final_hop": True
+    })
+    if not res_dst.get("ok"):
+        print(f"[controller] destination {dst} refused chunk {chunk_id}")
+        return False
+
+    return True
+
+def get_node_stats(nodes, node_id: str) -> dict:
+    res = send(nodes[node_id][1], nodes[node_id][2], {"op": "get_stats"})
+    return res if res else {"ok": False}
+
+def print_util(nodes, node_id: str, prefix: str = "[controller]"):
+    stats = get_node_stats(nodes, node_id)
+    if stats.get("ok") is False:
+        print(f"{prefix} stats unavailable for {node_id}")
+        return
+    storage = stats.get("storage", {})
+    util = storage.get("utilization_percent", 0.0)
+    used = storage.get("used_bytes", 0)
+    total = storage.get("total_bytes", 1)
+    print(f"{prefix} {node_id} storage: {util:.4f}% ({used}/{total} bytes)")
+
+def main():
+    # Define nodes: cpu cores, memory GB, storage MB, bandwidth Mbps
+    spec = {
+        "node1": (4, 16, 500 * 1024, 1000),
+        "node2": (8, 32, 1000 * 1024, 2000),
+        "node3": (4, 16, 500 * 1024, 1000),
+        "node4": (8, 32, 1000 * 1024, 2000),
+    }
+
+    # Create processes
+    nodes: Dict[str, Tuple[mp.Process, mp.Queue, mp.Queue]] = {}
+    for nid, (cpu, mem, storage_mb, bw) in spec.items():
+        proc, cmd_q, resp_q = make_node_process(nid, cpu, mem, storage_mb, bw)
+        nodes[nid] = (proc, cmd_q, resp_q)
+
+    # Start processes and nodes
+    for nid, (proc, cmd_q, resp_q) in nodes.items():
+        proc.start()
+        send(cmd_q, resp_q, {"op": "start"})
+        time.sleep(0.05)
+
+    # Wire up connections (bidirectional)
+    links = [
+        ("node1", "node2", 1000),
+        ("node1", "node3", 2000),
+        ("node2", "node4", 1000),
+        ("node3", "node4", 2000),
+    ]
+    for a, b, bw in links:
+        send(nodes[a][1], nodes[a][2], {"op": "add_connection", "node_id": b, "bandwidth": bw})
+        send(nodes[b][1], nodes[b][2], {"op": "add_connection", "node_id": a, "bandwidth": bw})
+
+    # Prepare file transfer
+    file_name = "large_dataset.zip"
+    file_size = 100 * 1024 * 1024  # 100 MB
+    file_id = hashlib.md5(f"{file_name}-{time.time()}".encode()).hexdigest()
+
+    # Define a route (node1 -> node2 -> node4)
+    route = ["node1", "node2", "node4"]
+    src, mid, dst = route[0], route[1], route[2]
+
+    # Initiate the transfer on all nodes along the route
+    for nid in route:
+        res = send(nodes[nid][1], nodes[nid][2], {
+            "op": "initiate_transfer",
+            "file_id": file_id,
+            "file_name": file_name,
+            "file_size": file_size,
+            "source_node": src
+        })
+        if not res.get("ok"):
+            print(f"[controller] ERROR: initiate_transfer failed on {nid}: {res}")
+            # Stop if we can't initiate cleanly
+            for id2, (proc, cmd_q, resp_q) in nodes.items():
+                send(cmd_q, resp_q, {"op": "stop"})
+                proc.join(timeout=2.0)
+            return
+
+    # ✅ Process chunks until destination finalizes
+    completed = 0
+    chunks_per_step = 3
+    finalized = False
+
+    while not finalized:
+        step = 0
+        while step < chunks_per_step and not finalized:
+            # Check if destination already finalized
+            stats_dst = get_node_stats(nodes, dst)
+            storage_dst = stats_dst.get("storage", {})
+            util_dst = storage_dst.get("utilization_percent", 0.0)
+
+            if util_dst > 0.0 and storage_dst.get("files_stored", 0) > 0:
+                print(f"[controller] {dst} finalized transfer at {util_dst:.4f}% utilization")
+                finalized = True
+                break
+
+            # Otherwise process next chunk
+            ok = route_process_step(nodes, file_id, completed, src, mid, dst)
+            if not ok:
+                print(f"[controller] stopping at chunk {completed}, transfer likely complete.")
+                finalized = True
+                break
+
+            completed += 1
+            step += 1
+
+        # Poll destination stats after each batch
+        stats_dst = get_node_stats(nodes, dst)
+        storage_dst = stats_dst.get("storage", {})
+        util_dst = storage_dst.get("utilization_percent", 0.0)
+        print(f"[controller] {dst} utilization: {util_dst:.4f}% | chunks={completed}")
+        time.sleep(0.3)
+
+    print("[controller] transfer loop ended; beginning shutdown...")
+
+    # Shutdown nodes
+    for nid, (proc, cmd_q, resp_q) in nodes.items():
+        send(cmd_q, resp_q, {"op": "stop"})
+        proc.join(timeout=2.0)
+
+    # Final report
+    print_util(nodes, dst, "[controller] FINAL")
+    print("[controller] done.")
+
+if __name__ == "__main__":
+    main()

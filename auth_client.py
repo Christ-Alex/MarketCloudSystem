@@ -1,55 +1,53 @@
+# auth_client.py
+import os
 import grpc
 import auth_pb2
 import auth_pb2_grpc
 
 def run():
-    # Connect to gRPC server
     channel = grpc.insecure_channel('localhost:50051')
     stub = auth_pb2_grpc.AuthServiceStub(channel)
 
-    # Prompt for user input
-    email = input("Enter email: ")
-    username = input("Enter username: ")
-    password = input("Enter password: ")
+    email = input("Enter email: ").strip()
+    username = input("Enter username: ").strip()
+    password = input("Enter password: ").strip()
 
     # Register
-    response = stub.Register(auth_pb2.RegisterRequest(
+    resp = stub.Register(auth_pb2.RegisterRequest(
         email=email,
         username=username,
         password=password
     ))
-    print("Register:", response.success, response.message)
+    print("Register:", resp.success, resp.message)
 
-    # Login
-    response = stub.Login(auth_pb2.LoginRequest(
-        email=email,
-        password=password
-    ))
-    print("Login:", response.success, response.message)
+    # Login -> triggers OTP send
+    resp = stub.Login(auth_pb2.LoginRequest(email=email, password=password))
+    print("Login:", resp.success, resp.message)
 
-    # Verify OTP (currently hardcoded in server as "123456")
-    otp_code = input("Enter OTP (default 123456): ") or "123456"
-    response = stub.VerifyOTP(auth_pb2.OTPRequest(
-        email=email,
-        otp_code=otp_code
-    ))
-    print("VerifyOTP:", response.success, response.message)
+    otp_code = input("Enter OTP (check console or email): ").strip()
+    resp = stub.VerifyOTP(auth_pb2.OTPRequest(email=email, otp_code=otp_code))
+    print("VerifyOTP:", resp.success, resp.message)
 
-    # Upload File
-    filename = input("Enter filename to upload (e.g. report.pdf): ")
-    filesize = int(input("Enter file size in bytes (e.g. 204800): "))
-    response = stub.UploadFile(auth_pb2.FileUploadRequest(
-        email=email,
-        filename=filename,
-        filesize=filesize
-    ))
-    print("UploadFile:", response.success, response.message)
+    # Upload a file (read bytes)
+    filename = input("Path to file to upload (leave empty to skip): ").strip()
+    if filename:
+        if not os.path.exists(filename):
+            print("File not found:", filename)
+        else:
+            with open(filename, "rb") as f:
+                content = f.read()
+            resp = stub.UploadFile(auth_pb2.FileUploadRequest(
+                email=email,
+                filename=os.path.basename(filename),
+                content=content
+            ))
+            print("UploadFile:", resp.success, resp.message)
 
-    # List Files
-    response = stub.ListFiles(auth_pb2.ListFilesRequest(
-        email=email
-    ))
-    print("ListFiles:", response.filenames)
+    # List files
+    resp = stub.ListFiles(auth_pb2.ListFilesRequest(email=email))
+    print("Files:")
+    for f in resp.files:
+        print(f" - {f.filename} ({f.size} bytes)")
 
 if __name__ == "__main__":
     run()

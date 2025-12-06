@@ -55,10 +55,25 @@ class AuthServiceStub(object):
                 request_serializer=auth__pb2.FileUploadRequest.SerializeToString,
                 response_deserializer=auth__pb2.FileUploadResponse.FromString,
                 _registered_method=True)
+        self.DownloadFile = channel.unary_unary(
+                '/cloud.AuthService/DownloadFile',
+                request_serializer=auth__pb2.FileDownloadRequest.SerializeToString,
+                response_deserializer=auth__pb2.FileDownloadResponse.FromString,
+                _registered_method=True)
+        self.DeleteFile = channel.unary_unary(
+                '/cloud.AuthService/DeleteFile',
+                request_serializer=auth__pb2.FileDeleteRequest.SerializeToString,
+                response_deserializer=auth__pb2.FileDeleteResponse.FromString,
+                _registered_method=True)
         self.ListFiles = channel.unary_unary(
                 '/cloud.AuthService/ListFiles',
                 request_serializer=auth__pb2.ListFilesRequest.SerializeToString,
                 response_deserializer=auth__pb2.ListFilesResponse.FromString,
+                _registered_method=True)
+        self.GetQuota = channel.unary_unary(
+                '/cloud.AuthService/GetQuota',
+                request_serializer=auth__pb2.QuotaRequest.SerializeToString,
+                response_deserializer=auth__pb2.QuotaResponse.FromString,
                 _registered_method=True)
 
 
@@ -88,7 +103,21 @@ class AuthServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def UploadFile(self, request, context):
-        """Upload a file (only if authenticated and within quota)
+        """Upload a file (authenticated, within quota)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadFile(self, request, context):
+        """Download a file
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteFile(self, request, context):
+        """Delete a file
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -96,6 +125,13 @@ class AuthServiceServicer(object):
 
     def ListFiles(self, request, context):
         """List all files stored by a user
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetQuota(self, request, context):
+        """Get quota usage (bytes used vs total)
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -124,10 +160,25 @@ def add_AuthServiceServicer_to_server(servicer, server):
                     request_deserializer=auth__pb2.FileUploadRequest.FromString,
                     response_serializer=auth__pb2.FileUploadResponse.SerializeToString,
             ),
+            'DownloadFile': grpc.unary_unary_rpc_method_handler(
+                    servicer.DownloadFile,
+                    request_deserializer=auth__pb2.FileDownloadRequest.FromString,
+                    response_serializer=auth__pb2.FileDownloadResponse.SerializeToString,
+            ),
+            'DeleteFile': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteFile,
+                    request_deserializer=auth__pb2.FileDeleteRequest.FromString,
+                    response_serializer=auth__pb2.FileDeleteResponse.SerializeToString,
+            ),
             'ListFiles': grpc.unary_unary_rpc_method_handler(
                     servicer.ListFiles,
                     request_deserializer=auth__pb2.ListFilesRequest.FromString,
                     response_serializer=auth__pb2.ListFilesResponse.SerializeToString,
+            ),
+            'GetQuota': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetQuota,
+                    request_deserializer=auth__pb2.QuotaRequest.FromString,
+                    response_serializer=auth__pb2.QuotaResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -250,6 +301,60 @@ class AuthService(object):
             _registered_method=True)
 
     @staticmethod
+    def DownloadFile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.AuthService/DownloadFile',
+            auth__pb2.FileDownloadRequest.SerializeToString,
+            auth__pb2.FileDownloadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteFile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.AuthService/DeleteFile',
+            auth__pb2.FileDeleteRequest.SerializeToString,
+            auth__pb2.FileDeleteResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def ListFiles(request,
             target,
             options=(),
@@ -266,6 +371,33 @@ class AuthService(object):
             '/cloud.AuthService/ListFiles',
             auth__pb2.ListFilesRequest.SerializeToString,
             auth__pb2.ListFilesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetQuota(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/cloud.AuthService/GetQuota',
+            auth__pb2.QuotaRequest.SerializeToString,
+            auth__pb2.QuotaResponse.FromString,
             options,
             channel_credentials,
             insecure,

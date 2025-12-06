@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>OTP Verification</h3>
+<p>We sent an OTP to <strong>{{ email }}</strong>. Enter it below to continue:</p>
+
+<form method="POST" class="card">
+  <input type="text" name="otp" placeholder="6-digit code" required>
+  <button class="btn btn-primary w-100">Verify</button>
+</form>
+{% endblock %}

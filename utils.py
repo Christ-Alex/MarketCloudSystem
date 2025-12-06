@@ -1,58 +1,47 @@
+# utils.py
 import bcrypt
 import random
-import smtplib
+import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from params import from_email, from_password
+import os
 
-def hash_password(password):
-    return bcrypt.hashpw(password.encode('utf-8'), 
-                         bcrypt.gensalt()).decode('utf-8')
+def hash_password(password: str) -> str:
+    """Hash a password with bcrypt."""
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-def generate_otp():
+def check_password(password: str, hashed: str) -> bool:
+    """Verify a password against its hash."""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+def generate_otp() -> str:
+    """Generate a random 6-digit OTP."""
     return str(random.randint(100000, 999999))
 
-def send_otp(to_email) -> str:
+def send_otp(to_email: str, otp: str) -> bool:
+    """Send OTP via Gmail SMTP using environment variables."""
+    from_email = os.getenv("GMAIL_SENDER")      # e.g. your Gmail address
+    from_password = os.getenv("GMAIL_APP_PWD")  # your Gmail app password
 
-    otp = generate_otp()
+    if not from_email or not from_password:
+        raise RuntimeError("Set GMAIL_SENDER and GMAIL_APP_PWD environment variables")
 
-    # Sender configuration
-    subject = "Your OTP Code for the cloud security simulator"
-    body = f"Your OTP code is: {otp}"
+    subject = "Your OTP Code for the Cloud Security Simulator"
+    body = f"Your OTP code is: {otp}\nThis code expires in 5 minutes."
 
-    # Create the email
     msg = MIMEMultipart()
-    msg['From'] = 'sasbergson@gmail.com'
+    msg['From'] = from_email
     msg['To'] = to_email
     msg['Subject'] = subject
-    
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        # Connect and send email
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            print(f"Starting tls session on smtp.gmail.com:587 .........", end='')
-            server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
-            print('[OK]')
-            print(f"login to the server with {from_email} .........", end='')
-            server.login('sasbergson@gmail.com', 'tgnw azxw lfjr jsuz')
-            print('[OK]')
-            print(f"Sending OTP data to {to_email}  .........", end='')
+            server.starttls(context=ssl.create_default_context())
+            server.login(from_email, from_password)
             server.send_message(msg)
-            print('[OK]')
-            print(f"OTP data sent to {to_email} successfully!")
-            return f"OTP data sent to your email: {to_email} successfully!"
+            print(f"OTP sent to {to_email}")
+            return True
     except Exception as e:
         print(f"Failed to send email: {e}")
-
-if __name__ == '__main__':
-    credentials = {}
-    file_path = 'ids'
-    with open(file_path, 'r') as file:
-        for line in file:
-            username, password = line.strip().split(',')
-            credentials[username] = password
-
-    with open('credentials', 'w') as file:
-        for username, password in credentials.items():
-            file.write(f'{username},{hash_password(password)}\n')
+        return False

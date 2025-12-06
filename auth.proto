@@ -13,11 +13,20 @@ service AuthService {
   // Verify OTP to confirm authentication
   rpc VerifyOTP(OTPRequest) returns (OTPResponse);
 
-  // Upload a file (only if authenticated and within quota)
+  // Upload a file (authenticated, within quota)
   rpc UploadFile(FileUploadRequest) returns (FileUploadResponse);
+
+  // Download a file
+  rpc DownloadFile(FileDownloadRequest) returns (FileDownloadResponse);
+
+  // Delete a file
+  rpc DeleteFile(FileDeleteRequest) returns (FileDeleteResponse);
 
   // List all files stored by a user
   rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+
+  // Get quota usage (bytes used vs total)
+  rpc GetQuota(QuotaRequest) returns (QuotaResponse);
 }
 
 // --- Messages ---
@@ -54,13 +63,35 @@ message OTPResponse {
   string message = 2;
 }
 
+// --- File operations ---
+
 message FileUploadRequest {
   string email = 1;
   string filename = 2;
-  int64 filesize = 3;
+  bytes content = 3;   // actual file bytes
 }
 
 message FileUploadResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message FileDownloadRequest {
+  string email = 1;
+  string filename = 2;
+}
+
+message FileDownloadResponse {
+  bytes content = 1;
+  string message = 2;
+}
+
+message FileDeleteRequest {
+  string email = 1;
+  string filename = 2;
+}
+
+message FileDeleteResponse {
   bool success = 1;
   string message = 2;
 }
@@ -69,6 +100,22 @@ message ListFilesRequest {
   string email = 1;
 }
 
+message FileInfo {
+  string filename = 1;
+  int64 size = 2;
+}
+
 message ListFilesResponse {
-  repeated string filenames = 1;
+  repeated FileInfo files = 1;
+}
+
+// --- Quota ---
+
+message QuotaRequest {
+  string email = 1;
+}
+
+message QuotaResponse {
+  int64 used_bytes = 1;
+  int64 total_bytes = 2;
 }
