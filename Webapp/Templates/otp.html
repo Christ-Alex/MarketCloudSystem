@@ -1,10 +1,57 @@
 {% extends "base.html" %}
 {% block content %}
-<h3>OTP Verification</h3>
-<p>We sent an OTP to <strong>{{ email }}</strong>. Enter it below to continue:</p>
+<div class="container">
+  <div class="otp-container">
+    <div class="otp-icon">🔐</div>
+    <h2>Verify Your Identity</h2>
+    <p class="otp-description">
+      We've sent a 6-digit verification code to<br>
+      <strong>{{ email }}</strong>
+    </p>
 
-<form method="POST" class="card">
-  <input type="text" name="otp" placeholder="6-digit code" required>
-  <button class="btn btn-primary w-100">Verify</button>
-</form>
+    <form method="POST" class="otp-form">
+      <div class="otp-input-group">
+        <input type="text" 
+               name="otp" 
+               id="otpInput"
+               placeholder="000000" 
+               maxlength="6" 
+               pattern="[0-9]{6}"
+               required 
+               autocomplete="one-time-code"
+               class="otp-input">
+      </div>
+
+      <button type="submit" class="submit-btn">
+        <span>Verify Code</span>
+        <span class="btn-arrow">→</span>
+      </button>
+    </form>
+
+    <div class="otp-footer">
+      <p>Didn't receive the code?</p>
+      <button class="link-button" onclick="alert('Please check your email or contact support')">
+        Need Help?
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auto-focus on OTP input
+  document.getElementById('otpInput').focus();
+
+  // Auto-submit when 6 digits entered
+  document.getElementById('otpInput').addEventListener('input', function(e) {
+    // Remove non-numeric characters
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    
+    if (e.target.value.length === 6) {
+      // Small delay for better UX
+      setTimeout(() => {
+        e.target.form.submit();
+      }, 300);
+    }
+  });
+</script>
 {% endblock %}

@@ -2,35 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>CloudSim</title>
+  <title>CloudSim - Distributed Cloud Storage</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="container">
-      <strong class="logo">CloudSim☁️</strong>
-      {% if session.get('email') %}
-      <form method="POST" action="{{ url_for('logout') }}">
-        <button class="btn btn-outline-danger">Logout</button>
-      </form>
-      {% endif %}
-    </div>
-  </nav>
-
   <!-- Flash messages -->
-  <main class="container">
-    {% with messages = get_flashed_messages(with_categories=True) %}
-      {% if messages %}
-        <div class="flash">
-          {% for category, message in messages %}
-          <div class="alert {{ category }}">{{ message }}</div>
-          {% endfor %}
+  {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">
+          <span>{{ message }}</span>
+          <button class="close-flash" onclick="this.parentElement.remove()">×</button>
         </div>
-      {% endif %}
-    {% endwith %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
+  <main class="main-container">
     {% block content %}{% endblock %}
   </main>
 </body>

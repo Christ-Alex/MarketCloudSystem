@@ -1,8 +1,12 @@
 import sys
 import os
 
-# Add parent folder to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add PARENT folder (CloudSim root) to Python path FIRST
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
+# NOW import the protobuf files
+import auth_pb2, auth_pb2_grpc
 
 import io
 from datetime import timedelta
@@ -12,8 +16,6 @@ from flask import (
 )
 from flask import session as flask_session
 import grpc
-
-import auth_pb2, auth_pb2_grpc
 
 
 app = Flask(__name__, template_folder="templates", static_folder="static")

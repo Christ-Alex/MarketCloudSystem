@@ -1,57 +1,702 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Welcome, {{ email }}</h2>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-<!-- Storage Usage -->
-<div class="card">
-  <h5>Storage Usage</h5>
-  <p>{{ (used/1024/1024)|round(1) }} MB of {{ (total/1024/1024/1024)|round(1) }} GB used</p>
-  <div class="progress">
-    <div class="progress-bar" style="width: {{ percent }}%;">
-      {{ percent }}%
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  overflow: hidden;
+}
+
+.dashboard-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f0f 100%);
+}
+
+/* Top Bar */
+.top-bar {
+  height: 64px;
+  background: rgba(20, 20, 30, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  font-size: 32px;
+}
+
+.logo-text {
+  font-size: 24px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.search-section {
+  flex: 1;
+  max-width: 600px;
+}
+
+.search-box {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s;
+}
+
+.search-box:focus-within {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.search-box input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #e0e0e0;
+  font-size: 15px;
+}
+
+.search-box input::placeholder {
+  color: #666;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-email {
+  color: #999;
+  font-size: 14px;
+}
+
+.logout-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.logout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  background: rgba(20, 20, 30, 0.8);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.upload-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.upload-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  color: #999;
+  text-decoration: none;
+  font-size: 15px;
+  transition: all 0.3s;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e0e0e0;
+}
+
+.nav-link.active {
+  background: rgba(102, 126, 234, 0.15);
+  color: #667eea;
+}
+
+.nav-icon {
+  font-size: 22px;
+}
+
+.storage-widget {
+  margin-top: auto;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.storage-title {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.storage-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.storage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.5s ease;
+}
+
+.storage-text {
+  font-size: 13px;
+  color: #999;
+}
+
+.storage-percent {
+  font-size: 12px;
+  color: #667eea;
+  margin-top: 4px;
+}
+
+/* Files Area */
+.files-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+}
+
+.files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.files-header h2 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.view-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.view-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #999;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.view-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e0e0e0;
+}
+
+.view-btn.active {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: #667eea;
+  color: #667eea;
+}
+
+/* Files Grid */
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+}
+
+.file-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.file-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #667eea;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
+}
+
+.file-icon-large {
+  font-size: 72px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.file-name {
+  font-size: 15px;
+  color: #e0e0e0;
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.file-size {
+  font-size: 13px;
+  color: #666;
+  text-align: center;
+}
+
+.file-menu-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #999;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.file-card:hover .file-menu-btn {
+  opacity: 1;
+}
+
+.file-menu-btn:hover {
+  background: rgba(102, 126, 234, 0.3);
+  color: #667eea;
+}
+
+.file-menu {
+  display: none;
+  position: absolute;
+  top: 48px;
+  right: 12px;
+  background: rgba(30, 30, 40, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 180px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.file-menu.show {
+  display: block;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #e0e0e0;
+  text-decoration: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.menu-item.danger {
+  color: #ff6b6b;
+}
+
+.menu-item.danger:hover {
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 8px 0;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.empty-icon {
+  font-size: 100px;
+  margin-bottom: 24px;
+  opacity: 0.3;
+}
+
+.empty-state h3 {
+  font-size: 24px;
+  color: #e0e0e0;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 32px;
+}
+
+.empty-upload-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.empty-upload-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Scrollbar */
+.files-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.files-area::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.files-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.files-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Hidden file input */
+#fileInput {
+  display: none;
+}
+</style>
+
+<div class="dashboard-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="logo-section">
+      <span class="logo-icon">☁️</span>
+      <span class="logo-text">CloudSim Drive</span>
+    </div>
+    
+    <div class="search-section">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" placeholder="Search files..." id="searchInput">
+      </div>
+    </div>
+    
+    <div class="user-section">
+      <span class="user-email">{{ email }}</span>
+      <form action="{{ url_for('logout') }}" method="POST" style="display: inline;">
+        <button type="submit" class="logout-btn">Logout</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+        <input type="file" name="file" id="fileInput" onchange="this.form.submit()">
+        <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
+          <span>📤</span>
+          <span>Upload File</span>
+        </button>
+      </form>
+      
+      <div class="nav-links">
+        <a href="#" class="nav-link active">
+          <span class="nav-icon">🏠</span>
+          <span>My Drive</span>
+        </a>
+        <a href="#" class="nav-link">
+          <span class="nav-icon">👥</span>
+          <span>Shared</span>
+        </a>
+        <a href="#" class="nav-link">
+          <span class="nav-icon">⏰</span>
+          <span>Recent</span>
+        </a>
+        <a href="#" class="nav-link">
+          <span class="nav-icon">⭐</span>
+          <span>Starred</span>
+        </a>
+        <a href="#" class="nav-link">
+          <span class="nav-icon">🗑️</span>
+          <span>Trash</span>
+        </a>
+      </div>
+      
+      <div class="storage-widget">
+        <div class="storage-title">Storage</div>
+        <div class="storage-bar">
+          <div class="storage-fill" style="width: {{ percent }}%"></div>
+        </div>
+        <div class="storage-text">
+          {{ (used/1024/1024)|round(1) }} MB of {{ (total/1024/1024/1024)|round(1) }} GB used
+        </div>
+        <div class="storage-percent">{{ percent }}% full</div>
+      </div>
+    </div>
+
+    <!-- Files Area -->
+    <div class="files-area">
+      <div class="files-header">
+        <h2>My Files</h2>
+        <div class="view-controls">
+          <button class="view-btn active" onclick="setView('grid')">⊞</button>
+          <button class="view-btn" onclick="setView('list')">☰</button>
+        </div>
+      </div>
+
+      {% if files and files|length > 0 %}
+        <div class="files-grid" id="filesGrid">
+          {% for f in files %}
+          <div class="file-card" data-filename="{{ f.filename }}">
+            <button class="file-menu-btn" onclick="toggleMenu(event, {{ loop.index }})">⋮</button>
+            
+            <div class="file-menu" id="menu-{{ loop.index }}">
+              <a href="{{ url_for('download', filename=f.filename|urlencode) }}" class="menu-item">
+                <span>⬇️</span>
+                <span>Download</span>
+              </a>
+              <button class="menu-item" onclick="shareFile('{{ f.filename }}')">
+                <span>🔗</span>
+                <span>Get link</span>
+              </button>
+              <div class="menu-divider"></div>
+              <form method="POST" action="{{ url_for('delete', filename=f.filename|urlencode) }}" style="display: inline;" onsubmit="return confirmDelete('{{ f.filename }}')">
+                <button type="submit" class="menu-item danger">
+                  <span>🗑️</span>
+                  <span>Delete</span>
+                </button>
+              </form>
+            </div>
+            
+            <div class="file-icon-large">
+              {% if f.filename.endswith(('.jpg', '.jpeg', '.png', '.gif', '.svg')) %}
+                🖼️
+              {% elif f.filename.endswith(('.pdf',)) %}
+                📕
+              {% elif f.filename.endswith(('.doc', '.docx')) %}
+                📘
+              {% elif f.filename.endswith(('.xls', '.xlsx')) %}
+                📗
+              {% elif f.filename.endswith(('.ppt', '.pptx')) %}
+                📙
+              {% elif f.filename.endswith(('.zip', '.rar', '.7z')) %}
+                📦
+              {% elif f.filename.endswith(('.mp4', '.avi', '.mov')) %}
+                🎬
+              {% elif f.filename.endswith(('.mp3', '.wav', '.flac')) %}
+                🎵
+              {% elif f.filename.endswith(('.txt',)) %}
+                📄
+              {% else %}
+                📎
+              {% endif %}
+            </div>
+            <div class="file-name" title="{{ f.filename }}">{{ f.filename }}</div>
+            <div class="file-size">{{ (f.size/1024)|round(1) }} KB</div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📂</div>
+          <h3>Your drive is empty</h3>
+          <p>Upload your first file to get started</p>
+          <button class="empty-upload-btn" onclick="document.getElementById('fileInput').click()">
+            <span>📤</span>
+            <span>Upload Files</span>
+          </button>
+        </div>
+      {% endif %}
     </div>
   </div>
 </div>
 
-<!-- Upload Section -->
-<div class="card">
-  <h5>Upload File</h5>
-  <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
-    <input type="file" name="file" class="form-control mb-2" required>
-    <button class="btn btn-primary w-100">Upload</button>
-  </form>
-  <p class="hint">Drag & drop files here or use the button above.</p>
-</div>
+<script>
+// Toggle menu
+let currentMenu = null;
 
-<!-- File List -->
-<div class="card">
-  <h5>Your Files</h5>
-  {% if files and files|length > 0 %}
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Filename</th>
-          <th>Size</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for f in files %}
-        <tr>
-          <td>{{ f.filename }}</td>
-          <td>{{ (f.size/1024)|round(1) }} KB</td>
-          <td>
-            <a class="btn btn-sm btn-success" href="{{ url_for('download', filename=f.filename|urlencode) }}">Download</a>
-            <form method="POST" action="{{ url_for('delete', filename=f.filename|urlencode) }}" style="display:inline;">
-              <button class="btn btn-sm btn-danger">Delete</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>No files uploaded yet. Start by adding one above!</p>
-  {% endif %}
-</div>
+function toggleMenu(event, index) {
+  event.stopPropagation();
+  const menu = document.getElementById('menu-' + index);
+  
+  // Close previous menu
+  if (currentMenu && currentMenu !== menu) {
+    currentMenu.classList.remove('show');
+  }
+  
+  // Toggle current menu
+  menu.classList.toggle('show');
+  currentMenu = menu.classList.contains('show') ? menu : null;
+}
+
+// Close menu on outside click
+document.addEventListener('click', function() {
+  if (currentMenu) {
+    currentMenu.classList.remove('show');
+    currentMenu = null;
+  }
+});
+
+// Prevent menu close when clicking inside
+document.querySelectorAll('.file-menu').forEach(menu => {
+  menu.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+});
+
+// Confirm delete
+function confirmDelete(filename) {
+  return confirm('Are you sure you want to delete "' + filename + '"?');
+}
+
+// Share file
+function shareFile(filename) {
+  alert('Share link for "' + filename + '":\n\nhttps://cloudsim.drive/share/abc123\n\n(Feature coming soon!)');
+  if (currentMenu) {
+    currentMenu.classList.remove('show');
+    currentMenu = null;
+  }
+}
+
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function(e) {
+  const searchTerm = e.target.value.toLowerCase();
+  const fileCards = document.querySelectorAll('.file-card');
+  
+  fileCards.forEach(card => {
+    const filename = card.dataset.filename.toLowerCase();
+    if (filename.includes(searchTerm)) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+});
+
+// View switching (placeholder)
+function setView(view) {
+  const buttons = document.querySelectorAll('.view-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  // Grid vs List view can be implemented here
+  if (view === 'list') {
+    alert('List view coming soon!');
+  }
+}
+</script>
 {% endblock %}

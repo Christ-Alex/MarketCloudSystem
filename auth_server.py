@@ -1,75 +1,77 @@
-# auth_server.py
 import os
 import grpc
 import logging
 import hashlib
 from concurrent import futures
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from werkzeug.utils import secure_filename
 
-import auth_pb2
-import auth_pb2_grpc
-
-# Project-local imports (your models & utility helpers)
-from models import SessionLocal, User, File, Chunk  # ensure these are correct
+import auth_pb2, auth_pb2_grpc
+from models import SessionLocal, User, File, Chunk
 from utils import hash_password, check_password, generate_otp, send_otp
+from dotenv import load_dotenv
+
+# Load .env from current directory
+load_dotenv()
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("auth_server")
 
 STORAGE_DIR = "storage"
 os.makedirs(STORAGE_DIR, exist_ok=True)
 
 
 class AuthService(auth_pb2_grpc.AuthServiceServicer):
+
     def Register(self, request, context):
         db: Session = SessionLocal()
         try:
             existing = db.query(User).filter(User.email == request.email).first()
             if existing:
-                return auth_pb2.RegisterResponse(success=False, message="User already exists", quota_bytes=0)
+                return auth_pb2.RegisterResponse(
+                    success=False, message="User already exists", quota_bytes=0
+                )
 
             hashed_pw = hash_password(request.password)
             quota = 5 * 1024 * 1024 * 1024  # 5GB
-
-            otp = generate_otp()
-            otp_expiry = datetime.utcnow() + timedelta(minutes=5)
 
             user = User(
                 email=request.email,
                 password_hash=hashed_pw,
                 quota_bytes=quota,
-                used_bytes=0,
-                otp=otp,
-                otp_expiry=otp_expiry
+                used_bytes=0
             )
 
-            # If your User model has a username column and proto provided username
+            # Handle username if your DB has it
             if hasattr(user, "username") and getattr(request, "username", ""):
                 user.username = request.username
 
             db.add(user)
             db.commit()
 
-            # send OTP after commit (so user row exists)
-            try:
-                send_otp(user.email, otp)
-            except Exception:
-                logger.exception("Failed to send OTP email; continuing (user registered)")
+            # Generate OTP
+            otp = generate_otp()
+            user.otp = otp
+            user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
+            db.commit()
+
+            send_otp(user.email, otp)
 
             return auth_pb2.RegisterResponse(
                 success=True,
                 message="User registered. OTP sent to email.",
                 quota_bytes=quota
             )
+
         except Exception:
-            logger.exception("Register failed")
+            logging.exception("Register failed")
             db.rollback()
             return auth_pb2.RegisterResponse(success=False, message="Internal server error", quota_bytes=0)
         finally:
             db.close()
+
 
     def Login(self, request, context):
         db: Session = SessionLocal()
@@ -83,46 +85,51 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
 
             otp = generate_otp()
             user.otp = otp
-            user.otp_expiry = datetime.utcnow() + timedelta(minutes=5)
+            user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
             db.commit()
 
-            try:
-                send_otp(user.email, otp)
-            except Exception:
-                logger.exception("Failed to send OTP after login; continuing")
+            send_otp(user.email, otp)
 
             return auth_pb2.LoginResponse(success=True, message="OTP sent to email")
+
         except Exception:
-            logger.exception("Login failed")
+            logging.exception("Login failed")
             db.rollback()
             return auth_pb2.LoginResponse(success=False, message="Internal server error")
         finally:
             db.close()
 
+
     def VerifyOTP(self, request, context):
-        db: Session = SessionLocal()
         try:
-            user = db.query(User).filter(User.email == request.email).first()
-            if not user or not user.otp:
-                return auth_pb2.OTPResponse(success=False, message="OTP not found; login first")
+            with SessionLocal() as db:
+                user = db.query(User).filter(User.email == request.email).first()
+                if not user:
+                    # FIX: Use OTPResponse (not VerifyOTPResponse)
+                    return auth_pb2.OTPResponse(success=False, message="User not found")
 
-            if user.otp != request.otp_code:
-                return auth_pb2.OTPResponse(success=False, message="Invalid OTP")
+                # Normalize timezone
+                expiry = user.otp_expiry
+                if expiry and expiry.tzinfo is None:
+                    expiry = expiry.replace(tzinfo=timezone.utc)
 
-            if not user.otp_expiry or user.otp_expiry < datetime.utcnow():
-                return auth_pb2.OTPResponse(success=False, message="OTP expired")
+                if not expiry or expiry < datetime.now(timezone.utc):
+                    return auth_pb2.OTPResponse(success=False, message="OTP expired")
 
-            user.otp = None
-            user.otp_expiry = None
-            db.commit()
+                # FIX: Use request.otp_code (not request.otp)
+                if request.otp_code != user.otp:
+                    return auth_pb2.OTPResponse(success=False, message="Invalid OTP")
 
-            return auth_pb2.OTPResponse(success=True, message="Authentication successful")
-        except Exception:
-            logger.exception("VerifyOTP failed")
-            db.rollback()
-            return auth_pb2.OTPResponse(success=False, message="Internal server error")
-        finally:
-            db.close()
+                # Clear OTP on success
+                user.otp = None
+                user.otp_expiry = None
+                db.commit()
+
+                return auth_pb2.OTPResponse(success=True, message="OTP verified")
+        except Exception as e:
+            logging.error("VerifyOTP failed", exc_info=e)
+            return auth_pb2.OTPResponse(success=False, message="Server error")
+
 
     def UploadFile(self, request, context):
         db: Session = SessionLocal()
@@ -141,49 +148,43 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
 
             content_size = len(request.content)
 
-            # Handle overwrite case (determine delta to compute quota usage)
             existing_file = db.query(File).filter(
                 File.owner_id == user.id,
                 File.filename == safe_name
             ).first()
+
             old_size = existing_file.size_bytes if existing_file else 0
             delta = content_size - old_size
 
-            # Quota check
             if user.used_bytes + delta > user.quota_bytes:
                 return auth_pb2.FileUploadResponse(success=False, message="Quota exceeded")
 
-            # Write file bytes to disk (atomic write pattern)
-            tmp_path = filepath + ".uploading"
-            with open(tmp_path, "wb") as f:
+            with open(filepath, "wb") as f:
                 f.write(request.content)
-            os.replace(tmp_path, filepath)  # atomic on most OSes
 
-            # Upsert file metadata
             if existing_file:
                 existing_file.size_bytes = content_size
                 file_row = existing_file
             else:
-                file_row = File(owner_id=user.id, filename=safe_name, size_bytes=content_size)
+                file_row = File(
+                    owner_id=user.id,
+                    filename=safe_name,
+                    size_bytes=content_size
+                )
                 db.add(file_row)
-                # ensure we get an id for the new file when inserting related chunk rows
-                db.flush()
 
-            # Update user quota usage
             user.used_bytes += delta
 
-            # Upsert chunk metadata (simple single-chunk model here)
             checksum = hashlib.sha256(request.content).hexdigest()
-            # If file_row.id might be None for some reason, flush handled above for new rows.
             chunk = db.query(Chunk).filter(
                 Chunk.file_id == file_row.id,
                 Chunk.chunk_index == 0
             ).first()
+
             if chunk:
                 chunk.size_bytes = content_size
                 chunk.checksum = checksum
             else:
-                # choose a node id heuristically (placeholder). Later integrate real node selection.
                 db.add(Chunk(
                     file_id=file_row.id,
                     chunk_index=0,
@@ -194,12 +195,14 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
 
             db.commit()
             return auth_pb2.FileUploadResponse(success=True, message="File uploaded")
+
         except Exception:
-            logger.exception("UploadFile failed")
+            logging.exception("UploadFile failed")
             db.rollback()
             return auth_pb2.FileUploadResponse(success=False, message="Internal server error")
         finally:
             db.close()
+
 
     def DownloadFile(self, request, context):
         try:
@@ -209,15 +212,19 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
 
             user_dir = os.path.join(STORAGE_DIR, request.email)
             filepath = os.path.join(user_dir, safe_name)
+
             if not os.path.exists(filepath):
                 return auth_pb2.FileDownloadResponse(content=b"", message="File not found")
 
             with open(filepath, "rb") as f:
                 content = f.read()
+
             return auth_pb2.FileDownloadResponse(content=content, message="File downloaded")
+
         except Exception:
-            logger.exception("DownloadFile failed")
+            logging.exception("DownloadFile failed")
             return auth_pb2.FileDownloadResponse(content=b"", message="Internal server error")
+
 
     def DeleteFile(self, request, context):
         db: Session = SessionLocal()
@@ -234,33 +241,35 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
                 File.owner_id == user.id,
                 File.filename == safe_name
             ).first()
+
             if not file:
                 return auth_pb2.FileDeleteResponse(success=False, message="File not found")
 
-            # Delete file bytes on disk
             user_dir = os.path.join(STORAGE_DIR, request.email)
             filepath = os.path.join(user_dir, safe_name)
+
             if os.path.exists(filepath):
                 try:
                     os.remove(filepath)
                 except Exception:
-                    logger.exception("Failed to remove file from disk")
+                    logging.exception("Failed to remove file")
 
-            # Remove chunk metadata for this file
             db.query(Chunk).filter(Chunk.file_id == file.id).delete()
 
-            # Update quota and delete file row
             user.used_bytes = max(0, user.used_bytes - file.size_bytes)
-            db.delete(file)
 
+            db.delete(file)
             db.commit()
+
             return auth_pb2.FileDeleteResponse(success=True, message="File deleted")
+
         except Exception:
-            logger.exception("DeleteFile failed")
+            logging.exception("DeleteFile failed")
             db.rollback()
             return auth_pb2.FileDeleteResponse(success=False, message="Internal server error")
         finally:
             db.close()
+
 
     def ListFiles(self, request, context):
         db: Session = SessionLocal()
@@ -270,13 +279,19 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
                 return auth_pb2.ListFilesResponse(files=[])
 
             file_records = db.query(File).filter(File.owner_id == user.id).all()
-            file_infos = [auth_pb2.FileInfo(filename=f.filename, size=f.size_bytes) for f in file_records]
+            file_infos = [
+                auth_pb2.FileInfo(filename=f.filename, size=f.size_bytes)
+                for f in file_records
+            ]
+
             return auth_pb2.ListFilesResponse(files=file_infos)
+
         except Exception:
-            logger.exception("ListFiles failed")
+            logging.exception("ListFiles failed")
             return auth_pb2.ListFilesResponse(files=[])
         finally:
             db.close()
+
 
     def GetQuota(self, request, context):
         db: Session = SessionLocal()
@@ -284,9 +299,14 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
             user = db.query(User).filter(User.email == request.email).first()
             if not user:
                 return auth_pb2.QuotaResponse(used_bytes=0, total_bytes=0)
-            return auth_pb2.QuotaResponse(used_bytes=user.used_bytes, total_bytes=user.quota_bytes)
+
+            return auth_pb2.QuotaResponse(
+                used_bytes=user.used_bytes,
+                total_bytes=user.quota_bytes
+            )
+
         except Exception:
-            logger.exception("GetQuota failed")
+            logging.exception("GetQuota failed")
             return auth_pb2.QuotaResponse(used_bytes=0, total_bytes=0)
         finally:
             db.close()
@@ -297,7 +317,16 @@ def serve():
     auth_pb2_grpc.add_AuthServiceServicer_to_server(AuthService(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
-    logger.info("Server started on port 50051")
+
+    print("\n" + "=" * 70)
+    print("🚀 CloudSim Auth Server Started (PRODUCTION MODE)")
+    print("=" * 70)
+    print("📡 Listening on port: 50051")
+    print("📧 Email service: ENABLED")
+    print("🔐 OTP codes will be sent to user emails")
+    print("=" * 70 + "\n")
+
+    logging.info("Server started on port 50051")
     server.wait_for_termination()
 
 

@@ -1,40 +1,93 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="landing">
-  <h1>Welcome to CloudSim</h1>
-  <p class="subtitle">Your personal cloud storage system</p>
-
-  <div class="form-grid">
-    <!-- Register -->
-    <div class="card">
-      <h3>Create Account</h3>
-      <form method="POST" action="{{ url_for('register') }}">
-        <label>Email</label>
-        <input type="email" name="email" placeholder="you@example.com" required>
-
-        <label>Username</label>
-        <input type="text" name="username" placeholder="Your name or handle">
-
-        <label>Password</label>
-        <input type="password" name="password" placeholder="Choose a secure password" required>
-
-        <button class="btn btn-success">Register</button>
-      </form>
+<div class="container">
+  <div class="auth-container">
+    <div class="hero-section">
+      <div class="cloud-icon">☁️</div>
+      <h1>CloudSim</h1>
+      <p>Your secure, distributed cloud storage solution. Store, manage, and access your files from anywhere with enterprise-grade security.</p>
+      <div class="features">
+        <div class="feature-item">
+          <span class="feature-icon">🔒</span>
+          <span>End-to-end encryption</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">⚡</span>
+          <span>Lightning fast transfers</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🌍</span>
+          <span>Global distribution</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Login -->
-    <div class="card">
-      <h3>Login</h3>
-      <form method="POST" action="{{ url_for('login') }}">
-        <label>Email</label>
-        <input type="email" name="email" placeholder="you@example.com" required>
+    <div class="form-section">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('login')">Login</button>
+        <button class="tab" onclick="switchTab('register')">Register</button>
+      </div>
 
-        <label>Password</label>
-        <input type="password" name="password" placeholder="Your password" required>
+      <!-- Login Form -->
+      <div class="form-content active" id="loginForm">
+        <h2 class="form-title">Welcome Back</h2>
+        <p class="form-subtitle">Sign in to access your cloud storage</p>
+        <form action="{{ url_for('login') }}" method="POST">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="submit-btn">
+            <span>Sign In</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </form>
+      </div>
 
-        <button class="btn btn-primary">Login</button>
-      </form>
+      <!-- Register Form -->
+      <div class="form-content" id="registerForm">
+        <h2 class="form-title">Create Account</h2>
+        <p class="form-subtitle">Get started with 5GB free storage</p>
+        <form action="{{ url_for('register') }}" method="POST">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="Your name or handle" autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="••••••••" required autocomplete="new-password">
+          </div>
+          <button type="submit" class="submit-btn">
+            <span>Create Account</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
+
+<script>
+  function switchTab(tab) {
+    // Update tabs
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Update forms
+    document.querySelectorAll('.form-content').forEach(f => f.classList.remove('active'));
+    if (tab === 'login') {
+      document.getElementById('loginForm').classList.add('active');
+    } else {
+      document.getElementById('registerForm').classList.add('active');
+    }
+  }
+</script>
 {% endblock %}
