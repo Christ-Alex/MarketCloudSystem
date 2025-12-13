@@ -187,47 +187,231 @@ def upload():
 def download(filename):
     if require_auth():
         return require_auth()
+
     email = flask_session.get("email")
 
+    # 🔧 Normalize filename
+    filename = os.path.basename(filename)
+
     try:
-        response = stub.DownloadFile(auth_pb2.FileDownloadRequest(
-            email=email,
-            filename=filename
-        ))
+        response = stub.DownloadFile(
+            auth_pb2.FileDownloadRequest(
+                email=email,
+                filename=filename
+            )
+        )
     except grpc.RpcError as e:
         return f"Download failed: {e.details()}", 502
 
-    content = getattr(response, "content", None)
-    if content is None or len(content) == 0:
-        return "File not found or empty content", 404
+    if not response or not response.content:
+        return "File not found", 404
 
     return send_file(
-        io.BytesIO(content),
+        io.BytesIO(response.content),
         as_attachment=True,
-        download_name=os.path.basename(filename)
+        download_name=filename
     )
 
 @app.route("/delete/<path:filename>", methods=["POST"])
 def delete(filename):
     if require_auth():
         return require_auth()
+
     email = flask_session.get("email")
 
+    # 🔧 Normalize filename
+    filename = os.path.basename(filename)
+
     try:
-        response = stub.DeleteFile(auth_pb2.FileDeleteRequest(
-            email=email,
-            filename=filename
-        ))
+        response = stub.DeleteFile(
+            auth_pb2.FileDeleteRequest(
+                email=email,
+                filename=filename
+            )
+        )
     except grpc.RpcError as e:
         flash(f"Delete failed: {e.details()}", "danger")
         return safe_redirect_to_dashboard()
 
-    if getattr(response, "success", False):
+    if response.success:
         flash(f"Deleted {filename}", "success")
     else:
-        flash(f"Delete failed: {getattr(response, 'message', 'Unknown error')}", "danger")
+        flash(f"Delete failed: {response.message}", "danger")
 
     return safe_redirect_to_dashboard()
+
+@app.route("/shared")
+def shared():
+    """Show shared files (placeholder - implement sharing logic)"""
+    if require_auth():
+        return require_auth()
+    email = flask_session.get("email")
+    
+    # TODO: Implement actual sharing logic with database
+    # For now, return empty list
+    shared_files = []
+    
+    try:
+        quota = stub.GetQuota(auth_pb2.QuotaRequest(email=email))
+        used_bytes = quota.used_bytes
+        total_bytes = quota.total_bytes
+    except grpc.RpcError:
+        used_bytes = 0
+        total_bytes = 5 * 1024 * 1024 * 1024
+    
+    percent_used = int((used_bytes / total_bytes) * 100) if total_bytes else 0
+    
+    return render_template(
+        "shared.html",
+        email=email,
+        files=shared_files,
+        used=used_bytes,
+        total=total_bytes,
+        percent=percent_used
+    )
+
+
+@app.route("/recent")
+def recent():
+    """Show recently accessed files"""
+    if require_auth():
+        return require_auth()
+    email = flask_session.get("email")
+    
+    try:
+        response = stub.ListFiles(auth_pb2.ListFilesRequest(email=email))
+        all_files = list(response.files) if response and response.files else []
+        
+        # Sort by most recent (in real app, you'd track access time in DB)
+        # For now, just show all files
+        recent_files = all_files[:10]  # Show last 10
+        
+        quota = stub.GetQuota(auth_pb2.QuotaRequest(email=email))
+        used_bytes = quota.used_bytes
+        total_bytes = quota.total_bytes
+    except grpc.RpcError:
+        recent_files = []
+        used_bytes = 0
+        total_bytes = 5 * 1024 * 1024 * 1024
+    
+    percent_used = int((used_bytes / total_bytes) * 100) if total_bytes else 0
+    
+    return render_template(
+        "recent.html",
+        email=email,
+        files=recent_files,
+        used=used_bytes,
+        total=total_bytes,
+        percent=percent_used
+    )
+
+
+@app.route("/starred")
+def starred():
+    """Show starred/favorited files"""
+    if require_auth():
+        return require_auth()
+    email = flask_session.get("email")
+    
+    # TODO: Implement starring logic in database
+    # For now, return empty list
+    starred_files = []
+    
+    try:
+        quota = stub.GetQuota(auth_pb2.QuotaRequest(email=email))
+        used_bytes = quota.used_bytes
+        total_bytes = quota.total_bytes
+    except grpc.RpcError:
+        used_bytes = 0
+        total_bytes = 5 * 1024 * 1024 * 1024
+    
+    percent_used = int((used_bytes / total_bytes) * 100) if total_bytes else 0
+    
+    return render_template(
+        "starred.html",
+        email=email,
+        files=starred_files,
+        used=used_bytes,
+        total=total_bytes,
+        percent=percent_used
+    )
+
+
+@app.route("/analytics")
+def analytics():
+    """Show storage analytics and statistics"""
+    if require_auth():
+        return require_auth()
+    email = flask_session.get("email")
+    
+    try:
+        response = stub.ListFiles(auth_pb2.ListFilesRequest(email=email))
+        files = list(response.files) if response and response.files else []
+        
+        quota = stub.GetQuota(auth_pb2.QuotaRequest(email=email))
+        used_bytes = quota.used_bytes
+        total_bytes = quota.total_bytes
+        
+        # Calculate analytics
+        total_files = len(files)
+        total_size = sum(f.size for f in files)
+        
+        # File type breakdown
+        file_types = {}
+        for f in files:
+            ext = f.filename.split('.')[-1].lower() if '.' in f.filename else 'other'
+            file_types[ext] = file_types.get(ext, 0) + 1
+        
+        # Average file size
+        avg_size = total_size / total_files if total_files > 0 else 0
+        
+    except grpc.RpcError:
+        total_files = 0
+        total_size = 0
+        file_types = {}
+        avg_size = 0
+        used_bytes = 0
+        total_bytes = 5 * 1024 * 1024 * 1024
+    
+    percent_used = int((used_bytes / total_bytes) * 100) if total_bytes else 0
+    
+    return render_template(
+        "analytics.html",
+        email=email,
+        total_files=total_files,
+        total_size=total_size,
+        file_types=file_types,
+        avg_size=avg_size,
+        used=used_bytes,
+        total=total_bytes,
+        percent=percent_used
+    )
+
+
+@app.route("/settings")
+def settings():
+    """Show user settings page"""
+    if require_auth():
+        return require_auth()
+    email = flask_session.get("email")
+    
+    try:
+        quota = stub.GetQuota(auth_pb2.QuotaRequest(email=email))
+        used_bytes = quota.used_bytes
+        total_bytes = quota.total_bytes
+    except grpc.RpcError:
+        used_bytes = 0
+        total_bytes = 5 * 1024 * 1024 * 1024
+    
+    percent_used = int((used_bytes / total_bytes) * 100) if total_bytes else 0
+    
+    return render_template(
+        "settings.html",
+        email=email,
+        used=used_bytes,
+        total=total_bytes,
+        percent=percent_used
+    )
 
 @app.route("/logout", methods=["POST"])
 def logout():

@@ -1,0 +1,9 @@
+{% extends "dashboard.html" %}
+{% block content %}
+<h2>Recent Files</h2>
+{% for f in files %}
+  <div class="file-card">{{ f.filename }}</div>
+{% else %}
+  <p>No recent activity.</p>
+{% endfor %}
+{% endblock %}

@@ -1,6 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
+:root {
+  --bg-primary: #0a0e27;
+  --bg-secondary: #111633;
+  --bg-tertiary: #1a1f3a;
+  --accent-primary: #00d4ff;
+  --accent-secondary: #7c3aed;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #1e293b;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -8,695 +22,1007 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #0f0f0f;
-  color: #e0e0e0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
   overflow: hidden;
 }
 
-.dashboard-container {
+.dashboard {
+  display: flex;
   height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f0f 100%);
+  overflow-y: auto;
 }
 
-/* Top Bar */
-.top-bar {
-  height: 64px;
-  background: rgba(20, 20, 30, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  gap: 24px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+.logo {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.logo-section {
+.logo-content {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
 .logo-icon {
-  font-size: 32px;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
 }
 
-.logo-text {
-  font-size: 24px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.logo-text h1 {
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
-.search-section {
+.logo-text p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.upload-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.upload-form {
+  position: relative;
+}
+
+.upload-input {
+  display: none;
+}
+
+.upload-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+}
+
+.upload-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 212, 255, 0.4);
+}
+
+.upload-btn:active {
+  transform: translateY(0);
+}
+
+.nav-section {
+  padding: 20px;
   flex: 1;
-  max-width: 600px;
 }
 
-.search-box {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 10px 20px;
+.nav-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-link {
+  padding: 12px 16px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: all 0.3s;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s;
+  font-size: 14px;
 }
 
-.search-box:focus-within {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.nav-link:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
-.search-box input {
-  flex: 1;
-  background: none;
-  border: none;
-  outline: none;
-  color: #e0e0e0;
-  font-size: 15px;
+.nav-link.active {
+  background: var(--bg-tertiary);
+  color: var(--accent-primary);
+  border-left: 3px solid var(--accent-primary);
 }
 
-.search-box input::placeholder {
-  color: #666;
+.nav-icon {
+  font-size: 18px;
+  width: 20px;
+  text-align: center;
 }
 
-.user-section {
+.storage-widget {
+  padding: 20px;
+  margin: 20px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.storage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.storage-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.storage-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.storage-bar {
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.storage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.storage-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.user-info {
+  padding: 20px;
+  border-top: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  gap: 20px;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.user-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.user-text {
+  min-width: 0;
+  flex: 1;
 }
 
 .user-email {
-  color: #999;
-  font-size: 14px;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-status {
+  font-size: 11px;
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .logout-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s;
+  font-size: 16px;
 }
 
 .logout-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
 }
 
 /* Main Content */
 .main-content {
   flex: 1;
   display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-/* Sidebar */
-.sidebar {
-  width: 280px;
-  background: rgba(20, 20, 30, 0.8);
-  backdrop-filter: blur(10px);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 24px 16px;
+.header {
+  height: 70px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
 }
 
-.upload-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 14px 24px;
-  border-radius: 12px;
-  font-size: 15px;
+.header-left h2 {
+  font-size: 24px;
   font-weight: 600;
-  cursor: pointer;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-box {
+  position: relative;
+  width: 300px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.stat-card {
+  background: var(--bg-secondary);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-primary);
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  font-size: 24px;
+  flex-shrink: 0;
 }
 
-.upload-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+.stat-icon.primary {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--accent-primary);
 }
 
-.nav-links {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.stat-icon.secondary {
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--accent-secondary);
 }
 
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
-  border-radius: 10px;
-  color: #999;
-  text-decoration: none;
-  font-size: 15px;
-  transition: all 0.3s;
+.stat-icon.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
 }
 
-.nav-link:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #e0e0e0;
+.stat-icon.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
 }
 
-.nav-link.active {
-  background: rgba(102, 126, 234, 0.15);
-  color: #667eea;
-}
-
-.nav-icon {
-  font-size: 22px;
-}
-
-.storage-widget {
-  margin-top: auto;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.storage-title {
-  font-size: 13px;
-  color: #999;
-  margin-bottom: 12px;
+.stat-content h3 {
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-weight: 600;
 }
 
-.storage-bar {
-  height: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 12px;
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
-.storage-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  transition: width 0.5s ease;
-}
-
-.storage-text {
-  font-size: 13px;
-  color: #999;
-}
-
-.storage-percent {
-  font-size: 12px;
-  color: #667eea;
-  margin-top: 4px;
-}
-
-/* Files Area */
-.files-area {
+.content-area {
   flex: 1;
   overflow-y: auto;
-  padding: 32px;
+  padding: 24px 32px;
 }
 
-.files-header {
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
-.files-header h2 {
-  font-size: 28px;
+.section-title {
+  font-size: 18px;
   font-weight: 600;
-  color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.view-controls {
+.file-count {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.view-toggle {
   display: flex;
   gap: 8px;
 }
 
 .view-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #999;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  font-size: 18px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
+  font-size: 16px;
 }
 
-.view-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e0e0e0;
-}
-
+.view-btn:hover,
 .view-btn.active {
-  background: rgba(102, 126, 234, 0.2);
-  border-color: #667eea;
-  color: #667eea;
+  background: var(--bg-tertiary);
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
 }
 
-/* Files Grid */
 .files-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
 }
 
 .file-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   padding: 20px;
-  cursor: pointer;
   transition: all 0.3s;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .file-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: #667eea;
   transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
+  border-color: var(--accent-primary);
+  box-shadow: 0 8px 30px rgba(0, 212, 255, 0.2);
 }
 
-.file-icon-large {
-  font-size: 72px;
+.file-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  margin-bottom: 16px;
+  background: var(--bg-tertiary);
+}
+
+.file-info {
+  width: 100%;
   text-align: center;
   margin-bottom: 16px;
 }
 
 .file-name {
-  font-size: 15px;
-  color: #e0e0e0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
   margin-bottom: 6px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
 }
 
-.file-size {
-  font-size: 13px;
-  color: #666;
-  text-align: center;
+.file-meta {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
-.file-menu-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #999;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  font-size: 18px;
+.file-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
   cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: all 0.3s;
-}
-
-.file-card:hover .file-menu-btn {
-  opacity: 1;
-}
-
-.file-menu-btn:hover {
-  background: rgba(102, 126, 234, 0.3);
-  color: #667eea;
-}
-
-.file-menu {
-  display: none;
-  position: absolute;
-  top: 48px;
-  right: 12px;
-  background: rgba(30, 30, 40, 0.98);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 8px;
-  min-width: 180px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-}
-
-.file-menu.show {
-  display: block;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  color: #e0e0e0;
+  gap: 6px;
   text-decoration: none;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
 }
 
-.menu-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+.action-btn:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+  transform: translateY(-2px);
 }
 
-.menu-item.danger {
-  color: #ff6b6b;
+.action-btn.delete {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
-.menu-item.danger:hover {
-  background: rgba(255, 107, 107, 0.1);
+.action-btn.delete:hover {
+  background: var(--danger);
+  color: white;
 }
 
-.menu-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 8px 0;
-}
-
-/* Empty State */
 .empty-state {
   text-align: center;
   padding: 80px 20px;
 }
 
 .empty-icon {
-  font-size: 100px;
-  margin-bottom: 24px;
+  font-size: 80px;
   opacity: 0.3;
+  margin-bottom: 20px;
 }
 
 .empty-state h3 {
-  font-size: 24px;
-  color: #e0e0e0;
+  font-size: 22px;
   margin-bottom: 12px;
-  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .empty-state p {
-  font-size: 16px;
-  color: #666;
-  margin-bottom: 32px;
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
 }
 
 .empty-upload-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
   padding: 14px 32px;
-  border-radius: 24px;
-  font-size: 15px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none;
+  border-radius: 8px;
+  color: white;
   font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
 }
 
 .empty-upload-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 25px rgba(0, 212, 255, 0.4);
+}
+
+/* Upload Progress */
+.upload-progress {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 320px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.upload-progress.active {
+  display: block;
+}
+
+.progress-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.progress-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--bg-tertiary);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.progress-text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.progress-bar {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  width: 0%;
+  transition: width 0.3s;
 }
 
 /* Scrollbar */
-.files-area::-webkit-scrollbar {
+.content-area::-webkit-scrollbar {
   width: 8px;
 }
 
-.files-area::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+.content-area::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
 }
 
-.files-area::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+.content-area::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
   border-radius: 4px;
 }
 
-.files-area::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+.content-area::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color);
 }
 
-/* Hidden file input */
-#fileInput {
-  display: none;
+/* Responsive */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 240px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    z-index: 1000;
+    transition: left 0.3s;
+  }
+  
+  .sidebar.active {
+    left: 0;
+  }
+  
+  .files-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 
-<div class="dashboard-container">
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <div class="logo-section">
-      <span class="logo-icon">☁️</span>
-      <span class="logo-text">CloudSim Drive</span>
-    </div>
-    
-    <div class="search-section">
-      <div class="search-box">
-        <span>🔍</span>
-        <input type="text" placeholder="Search files..." id="searchInput">
+<div class="dashboard">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-content">
+        <div class="logo-icon">☁️</div>
+        <div class="logo-text">
+          <h1>CloudSim</h1>
+          <p>Distributed Storage</p>
+        </div>
       </div>
     </div>
-    
-    <div class="user-section">
-      <span class="user-email">{{ email }}</span>
-      <form action="{{ url_for('logout') }}" method="POST" style="display: inline;">
-        <button type="submit" class="logout-btn">Logout</button>
-      </form>
-    </div>
-  </div>
 
-  <!-- Main Content -->
-  <div class="main-content">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
-        <input type="file" name="file" id="fileInput" onchange="this.form.submit()">
+    <div class="upload-section">
+      <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" id="uploadForm" class="upload-form">
+        <input type="file" name="file" id="fileInput" class="upload-input" onchange="handleUpload(event)">
         <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
           <span>📤</span>
           <span>Upload File</span>
         </button>
       </form>
-      
-      <div class="nav-links">
-        <a href="#" class="nav-link active">
-          <span class="nav-icon">🏠</span>
-          <span>My Drive</span>
-        </a>
-        <a href="#" class="nav-link">
-          <span class="nav-icon">👥</span>
-          <span>Shared</span>
-        </a>
-        <a href="#" class="nav-link">
-          <span class="nav-icon">⏰</span>
-          <span>Recent</span>
-        </a>
-        <a href="#" class="nav-link">
-          <span class="nav-icon">⭐</span>
-          <span>Starred</span>
-        </a>
-        <a href="#" class="nav-link">
-          <span class="nav-icon">🗑️</span>
-          <span>Trash</span>
-        </a>
+    </div>
+
+    <nav class="nav-section">
+  <div class="nav-title">Navigation</div>
+
+  <div class="nav-links">
+    <a href="{{ url_for('dashboard') }}"
+       class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+      <span class="nav-icon">📁</span>
+      <span>My Files</span>
+    </a>
+
+    <a href="{{ url_for('shared') }}"
+       class="nav-link {% if request.endpoint == 'shared' %}active{% endif %}">
+      <span class="nav-icon">🔗</span>
+      <span>Shared</span>
+    </a>
+
+    <a href="{{ url_for('recent') }}"
+       class="nav-link {% if request.endpoint == 'recent' %}active{% endif %}">
+      <span class="nav-icon">⏱️</span>
+      <span>Recent</span>
+    </a>
+
+    <a href="{{ url_for('starred') }}"
+       class="nav-link {% if request.endpoint == 'starred' %}active{% endif %}">
+      <span class="nav-icon">⭐</span>
+      <span>Starred</span>
+    </a>
+  </div>
+
+  <div class="nav-title" style="margin-top: 24px;">System</div>
+
+  <div class="nav-links">
+    <a href="{{ url_for('analytics') }}"
+       class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}">
+      <span class="nav-icon">📊</span>
+      <span>Analytics</span>
+    </a>
+
+    <a href="{{ url_for('settings') }}"
+       class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
+      <span class="nav-icon">⚙️</span>
+      <span>Settings</span>
+    </a>
+  </div>
+</nav>
+
+
+    <div class="user-info">
+      <div class="user-details">
+        <div class="user-avatar">{{ email[0]|upper }}</div>
+        <div class="user-text">
+          <div class="user-email" title="{{ email }}">{{ email }}</div>
+          <div class="user-status">
+            <span class="status-dot"></span>
+            <span>Online</span>
+          </div>
+        </div>
       </div>
-      
-      <div class="storage-widget">
-        <div class="storage-title">Storage</div>
-        <div class="storage-bar">
-          <div class="storage-fill" style="width: {{ percent }}%"></div>
+      <form action="{{ url_for('logout') }}" method="POST" style="display: inline;">
+        <button type="submit" class="logout-btn" title="Logout">🚪</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <h2>My Cloud Storage</h2>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Search files..." id="searchInput">
         </div>
-        <div class="storage-text">
-          {{ (used/1024/1024)|round(1) }} MB of {{ (total/1024/1024/1024)|round(1) }} GB used
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon primary">📦</div>
+        <div class="stat-content">
+          <h3>Total Files</h3>
+          <div class="stat-value">{{ files|length }}</div>
         </div>
-        <div class="storage-percent">{{ percent }}% full</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon secondary">💾</div>
+        <div class="stat-content">
+          <h3>Space Used</h3>
+          <div class="stat-value">{{ (used/1024/1024)|round(1) }} MB</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon success">📈</div>
+        <div class="stat-content">
+          <h3>Available</h3>
+          <div class="stat-value">{{ ((total-used)/1024/1024/1024)|round(1) }} GB</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon warning">🌐</div>
+        <div class="stat-content">
+          <h3>Node Status</h3>
+          <div class="stat-value">Active</div>
+        </div>
       </div>
     </div>
 
-    <!-- Files Area -->
-    <div class="files-area">
-      <div class="files-header">
-        <h2>My Files</h2>
-        <div class="view-controls">
-          <button class="view-btn active" onclick="setView('grid')">⊞</button>
-          <button class="view-btn" onclick="setView('list')">☰</button>
+    <div class="content-area">
+      <div class="section-header">
+        <div class="section-title">
+          <span>Files</span>
+          <span class="file-count">({{ files|length }} items)</span>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active">⊞</button>
+          <button class="view-btn">☰</button>
         </div>
       </div>
 
       {% if files and files|length > 0 %}
-        <div class="files-grid" id="filesGrid">
-          {% for f in files %}
-          <div class="file-card" data-filename="{{ f.filename }}">
-            <button class="file-menu-btn" onclick="toggleMenu(event, {{ loop.index }})">⋮</button>
-            
-            <div class="file-menu" id="menu-{{ loop.index }}">
-              <a href="{{ url_for('download', filename=f.filename|urlencode) }}" class="menu-item">
+      <div class="files-grid" id="filesGrid">
+        {% for f in files %}
+        <div class="file-card" data-filename="{{ f.filename }}">
+          <div class="file-icon">
+            {% if f.filename.endswith(('.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp')) %}
+              🖼️
+            {% elif f.filename.endswith(('.pdf',)) %}
+              📕
+            {% elif f.filename.endswith(('.doc', '.docx')) %}
+              📘
+            {% elif f.filename.endswith(('.xls', '.xlsx', '.csv')) %}
+              📗
+            {% elif f.filename.endswith(('.ppt', '.pptx')) %}
+              📙
+            {% elif f.filename.endswith(('.zip', '.rar', '.7z', '.tar', '.gz')) %}
+              📦
+            {% elif f.filename.endswith(('.mp4', '.avi', '.mov', '.mkv')) %}
+              🎬
+            {% elif f.filename.endswith(('.mp3', '.wav', '.flac', '.m4a')) %}
+              🎵
+            {% elif f.filename.endswith(('.py', '.js', '.html', '.css', '.json')) %}
+              💻
+            {% elif f.filename.endswith(('.txt', '.md')) %}
+              📄
+            {% else %}
+              📎
+            {% endif %}
+          </div>
+          <div class="file-info">
+            <div class="file-name" title="{{ f.filename }}">{{ f.filename }}</div>
+            <div class="file-meta">
+              <span>{{ (f.size/1024)|round(1) }} KB</span>
+            </div>
+          </div>
+          <div class="file-actions">
+            <a href="{{ url_for('download', filename=f.filename) }}"
+                class="action-btn">
                 <span>⬇️</span>
                 <span>Download</span>
               </a>
-              <button class="menu-item" onclick="shareFile('{{ f.filename }}')">
-                <span>🔗</span>
-                <span>Get link</span>
-              </button>
-              <div class="menu-divider"></div>
-              <form method="POST" action="{{ url_for('delete', filename=f.filename|urlencode) }}" style="display: inline;" onsubmit="return confirmDelete('{{ f.filename }}')">
-                <button type="submit" class="menu-item danger">
+
+              <!-- DELETE -->
+              <form method="POST"
+                    action="{{ url_for('delete', filename=f.filename) }}"
+                    onsubmit="return confirm('Delete {{ f.filename }} permanently?');"
+                    style="flex: 1;">
+                <button type="submit"
+                        class="action-btn delete"
+                        style="width: 100%;">
                   <span>🗑️</span>
                   <span>Delete</span>
                 </button>
               </form>
             </div>
-            
-            <div class="file-icon-large">
-              {% if f.filename.endswith(('.jpg', '.jpeg', '.png', '.gif', '.svg')) %}
-                🖼️
-              {% elif f.filename.endswith(('.pdf',)) %}
-                📕
-              {% elif f.filename.endswith(('.doc', '.docx')) %}
-                📘
-              {% elif f.filename.endswith(('.xls', '.xlsx')) %}
-                📗
-              {% elif f.filename.endswith(('.ppt', '.pptx')) %}
-                📙
-              {% elif f.filename.endswith(('.zip', '.rar', '.7z')) %}
-                📦
-              {% elif f.filename.endswith(('.mp4', '.avi', '.mov')) %}
-                🎬
-              {% elif f.filename.endswith(('.mp3', '.wav', '.flac')) %}
-                🎵
-              {% elif f.filename.endswith(('.txt',)) %}
-                📄
-              {% else %}
-                📎
-              {% endif %}
-            </div>
-            <div class="file-name" title="{{ f.filename }}">{{ f.filename }}</div>
-            <div class="file-size">{{ (f.size/1024)|round(1) }} KB</div>
-          </div>
-          {% endfor %}
         </div>
+        {% endfor %}
+      </div>
       {% else %}
-        <div class="empty-state">
-          <div class="empty-icon">📂</div>
-          <h3>Your drive is empty</h3>
-          <p>Upload your first file to get started</p>
-          <button class="empty-upload-btn" onclick="document.getElementById('fileInput').click()">
-            <span>📤</span>
-            <span>Upload Files</span>
-          </button>
-        </div>
+      <div class="empty-state">
+        <div class="empty-icon">📂</div>
+        <h3>No files yet</h3>
+        <p>Upload your first file to get started with CloudSim</p>
+        <button class="empty-upload-btn" onclick="document.getElementById('fileInput').click()">
+          <span>📤</span>
+          <span>Upload Files</span>
+        </button>
+      </div>
       {% endif %}
     </div>
+  </main>
+</div>
+
+<!-- Upload Progress Indicator -->
+<div class="upload-progress" id="uploadProgress">
+  <div class="progress-header">
+    <div class="progress-spinner"></div>
+    <span class="progress-text">Uploading...</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
   </div>
 </div>
 
 <script>
-// Toggle menu
-let currentMenu = null;
+/* ======================
+   FILE UPLOAD HANDLER
+====================== */
+function handleUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
 
-function toggleMenu(event, index) {
-  event.stopPropagation();
-  const menu = document.getElementById('menu-' + index);
-  
-  // Close previous menu
-  if (currentMenu && currentMenu !== menu) {
-    currentMenu.classList.remove('show');
+  const maxSize = 5 * 1024 * 1024 * 1024;
+  if (file.size > maxSize) {
+    alert("File too large (max 5GB)");
+    event.target.value = "";
+    return;
   }
-  
-  // Toggle current menu
-  menu.classList.toggle('show');
-  currentMenu = menu.classList.contains('show') ? menu : null;
+
+  const progress = document.getElementById("uploadProgress");
+  const fill = document.getElementById("progressFill");
+
+  progress.classList.add("active");
+
+  let width = 0;
+  const interval = setInterval(() => {
+    width += 10;
+    fill.style.width = width + "%";
+    if (width >= 90) clearInterval(interval);
+  }, 120);
+
+  document.getElementById("uploadForm").submit();
 }
 
-// Close menu on outside click
-document.addEventListener('click', function() {
-  if (currentMenu) {
-    currentMenu.classList.remove('show');
-    currentMenu = null;
-  }
-});
+/* ======================
+   SEARCH FILTER
+====================== */
+const searchInput = document.getElementById("searchInput");
+if (searchInput) {
+  searchInput.addEventListener("input", function () {
+    const term = this.value.toLowerCase();
+    document.querySelectorAll(".file-card").forEach(card => {
+      const name = card.dataset.filename || "";
+      card.style.display = name.toLowerCase().includes(term)
+        ? "block"
+        : "none";
+    });
+  });
+}
 
-// Prevent menu close when clicking inside
-document.querySelectorAll('.file-menu').forEach(menu => {
-  menu.addEventListener('click', function(e) {
-    e.stopPropagation();
+/* ======================
+   NAV ACTIVE STATE
+====================== */
+document.querySelectorAll(".nav-link").forEach(link => {
+  link.addEventListener("click", function () {
+    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+    this.classList.add("active");
   });
 });
-
-// Confirm delete
-function confirmDelete(filename) {
-  return confirm('Are you sure you want to delete "' + filename + '"?');
-}
-
-// Share file
-function shareFile(filename) {
-  alert('Share link for "' + filename + '":\n\nhttps://cloudsim.drive/share/abc123\n\n(Feature coming soon!)');
-  if (currentMenu) {
-    currentMenu.classList.remove('show');
-    currentMenu = null;
-  }
-}
-
-// Search functionality
-document.getElementById('searchInput').addEventListener('input', function(e) {
-  const searchTerm = e.target.value.toLowerCase();
-  const fileCards = document.querySelectorAll('.file-card');
-  
-  fileCards.forEach(card => {
-    const filename = card.dataset.filename.toLowerCase();
-    if (filename.includes(searchTerm)) {
-      card.style.display = '';
-    } else {
-      card.style.display = 'none';
-    }
-  });
-});
-
-// View switching (placeholder)
-function setView(view) {
-  const buttons = document.querySelectorAll('.view-btn');
-  buttons.forEach(btn => btn.classList.remove('active'));
-  event.target.classList.add('active');
-  
-  // Grid vs List view can be implemented here
-  if (view === 'list') {
-    alert('List view coming soon!');
-  }
-}
 </script>
 {% endblock %}
+

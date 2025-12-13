@@ -1,0 +1,10 @@
+{% extends "dashboard.html" %}
+{% block content %}
+<h2>Shared Files</h2>
+<p>No shared files yet.</p>
+{% if files %}
+  {% for f in files %}
+    <div class="file-card">{{ f.filename }}</div>
+  {% endfor %}
+{% endif %}
+{% endblock %}
